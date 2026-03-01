@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 
 export const useMedicineCompanies = () => {
   const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000/api';
 
@@ -12,36 +10,35 @@ export const useMedicineCompanies = () => {
       try {
         const token = localStorage.getItem('token');
         
-        // Use the get-all endpoint to find all unique manufacturers
-        const response = await fetch(`${backendUrl}/medicines/get-all`, {
+        // 🔥 CRITICAL FIX: Using the base `/medicines` route because we KNOW this works 
+        // from your screenshot. We pass a large limit to grab enough data to build the filter list.
+        const response = await fetch(`${backendUrl}/medicines?limit=1000`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
+            ...(token && { 'Authorization': `Bearer ${token}` })
           },
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch companies');
-        }
+        if (!response.ok) throw new Error('Failed to fetch manufacturers');
 
-        const data = await response.json();
+        const result = await response.json();
         
-        // Extract unique manufacturers and remove empties/nulls
-        const uniqueCompanies = [...new Set(data.map(item => item.manufacturer).filter(Boolean))];
+        // The base route returns { data: [...] }. We safely extract the array.
+        const dataArray = Array.isArray(result.data) ? result.data : [];
         
-        // Map to an object format for easier rendering
-        setCompanies(uniqueCompanies.map((name, index) => ({ id: index, name })));
+        // Extract unique 'manufacturer' names from the array and remove empty strings
+        const uniqueManufacturers = [...new Set(dataArray.map(item => item.manufacturer).filter(Boolean))];
+        
+        // Format it perfectly for our ModernDropdown component
+        setCompanies(uniqueManufacturers.map((name, index) => ({ id: index, name })));
       } catch (err) {
-        console.error('Failed to fetch companies:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        console.error('Failed to extract manufacturers for dropdown:', err);
       }
     };
 
     fetchCompanies();
   }, [backendUrl]);
 
-  return { companies, loading, error };
+  return { companies };
 };
