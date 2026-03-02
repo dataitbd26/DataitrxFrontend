@@ -8,7 +8,7 @@ import PrivateRoot from "./Root/PrivateRoot";
 
 // Admin Imports
 import Aroot from "./Root/Admin/Aroot";
-import Home from "../pages/Dashboard/Home";
+// import HomeA from "../pages/Dashboard/Home";
 import Dashboard from "../pages/Admin/Dashboard";
 import Prescriptions from "../pages/Admin/Prescriptions";
 import Appointments from "../pages/Admin/Appointments";
@@ -25,7 +25,7 @@ import ManageSms from "../pages/Admin/ManageSms";
 import ManageSystem from "../pages/Admin/ManageSystem";
 import Logout from "../pages/Admin/Logout";
 
-// Super Admin Imports (using aliases for components with same names as Admin)
+
 import SAroot from "./Root/Superadmin/Sroot"; 
 import SuperAdminHome from "../pages/Superadmin/Home"; 
 import SADashboard from "../pages/Superadmin/Dashboard";
@@ -42,17 +42,31 @@ import LoginHistory from "../pages/Superadmin/LoginHistory";
 import UserActivities from "../pages/Superadmin/UserActivities";
 import SALogout from "../pages/Superadmin/Logout";
 
+import Home from "../pages/Home";
+import About from "../pages/About";
+import Blog from "../pages/Blog";
+import Contact from "../pages/Contact";
+import Expertise from "../pages/Expertise";
+
+// import SelectChamber from "../pages/SelectChamber";
+// import TodaysAppointments from "../pages/TodaysAppointments";
+// import BookingConfirmation from "../pages/BookingConfirmation";
+
 export const router = createBrowserRouter([
-  // 1. Public / Login Route
   {
     path: "/",
     element: <Root />,
     errorElement: <Error404 />,
     children: [
-      {
-        path: "/",
-        element: <Login />,
-      },
+      { path: "/", element: <Home />  },
+      { path: "/about", element: <About /> },
+      { path: "/blog", element: <Blog /> },
+      { path: "/contact", element: <Contact /> },
+      { path: "/expertise", element: <Expertise /> },
+      // { path: "/booking-confirmation", element: <BookingConfirmation /> },
+      // { path: "/select-chamber", element: <SelectChamber /> },
+      // { path: "/todays-appointments", element: <TodaysAppointments /> },
+      { path: "/login", element: <Login />, },
     ],
   },
 
