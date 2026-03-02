@@ -30,14 +30,14 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="p-4 border-t border-gray-200 flex items-center justify-center bg-gray-50">
+    <div className="p-4 border-t border-casual-black/10 dark:border-white/10 flex items-center justify-center bg-concrete dark:bg-transparent transition-colors font-primary">
       <nav>
         <ul className="inline-flex items-center -space-x-px text-sm shadow-sm">
           <li>
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="flex items-center justify-center px-3 h-8 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition"
+              className="flex items-center justify-center px-3 h-8 ml-0 leading-tight text-casual-black/70 dark:text-concrete/70 bg-white dark:bg-casual-black border border-casual-black/20 dark:border-white/20 rounded-l-lg hover:bg-casual-black/5 dark:hover:bg-white/10 hover:text-casual-black dark:hover:text-concrete disabled:bg-casual-black/5 dark:disabled:bg-white/5 disabled:text-casual-black/40 dark:disabled:text-concrete/40 disabled:cursor-not-allowed transition-colors"
             >
               Previous
             </button>
@@ -46,16 +46,16 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           {pageNumbers.map((number, index) => (
             <li key={index}>
               {number === '...' ? (
-                <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300">
+                <span className="flex items-center justify-center px-3 h-8 leading-tight text-casual-black/70 dark:text-concrete/70 bg-white dark:bg-casual-black border border-casual-black/20 dark:border-white/20 transition-colors">
                   ...
                 </span>
               ) : (
                 <button
                   onClick={() => onPageChange(number)}
-                  className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 transition ${
+                  className={`flex items-center justify-center px-3 h-8 leading-tight border border-casual-black/20 dark:border-white/20 transition-colors ${
                     currentPage === number
-                      ? 'text-white bg-red-500 border-red-500 font-semibold'
-                      : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700'
+                      ? 'text-concrete bg-sporty-blue border-sporty-blue dark:bg-sporty-blue dark:border-sporty-blue font-semibold'
+                      : 'text-casual-black/70 dark:text-concrete/70 bg-white dark:bg-casual-black hover:bg-casual-black/5 dark:hover:bg-white/10 hover:text-casual-black dark:hover:text-concrete'
                   }`}
                 >
                   {number}
@@ -68,7 +68,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition"
+              className="flex items-center justify-center px-3 h-8 leading-tight text-casual-black/70 dark:text-concrete/70 bg-white dark:bg-casual-black border border-casual-black/20 dark:border-white/20 rounded-r-lg hover:bg-casual-black/5 dark:hover:bg-white/10 hover:text-casual-black dark:hover:text-concrete disabled:bg-casual-black/5 dark:disabled:bg-white/5 disabled:text-casual-black/40 dark:disabled:text-concrete/40 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>

@@ -1,27 +1,28 @@
-import React, { useState } from 'react';
-import { useMedicineList } from '../../Hook/useMedicineList';
-import { useMedicineCompanies } from '../../Hook/useMedicineCompanies';
+import React, { useState, useEffect, useCallback } from 'react';
+import { HiPlus, HiPencilSquare, HiTrash, HiMagnifyingGlass, HiCheck, HiClock, HiDocumentText } from "react-icons/hi2";
+import useMedicine from '../../Hook/useMedicine';
+import useMedicineManufacturer from '../../Hook/useMedicineManufacturer';
 import MedicineFormModal from '../../components/Medicine/MedicineFormModal';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
-import Pagination from '../../components/common/Pagination'; 
-import ModernDropdown from '../../components/common/ModernDropdown'; // 🔥 Import the new Dropdown
+import Pagination from '../../components/common/Pagination';
+import SectionTitle from '../../components/common/SectionTitle';
 
 const MedicineList = () => {
-  const [selectedFilter, setSelectedFilter] = useState('');
-  const [limit, setLimit] = useState(10); 
+  // Filters & Pagination State
+  const [selectedFilter, setSelectedFilter] = useState(''); // Manufacturer Filter
+  const [statusFilter, setStatusFilter] = useState('');     // Status Filter (pending, draft, final)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [limit, setLimit] = useState(10);
+  const [page, setPage] = useState(1);
   
-  const { 
-    medicines, 
-    loading, 
-    error, 
-    pagination, 
-    handlePageChange,
-    refetch,
-    deleteMedicine 
-  } = useMedicineList(1, limit, selectedFilter); 
+  // Data State
+  const [medicines, setMedicines] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [paginationData, setPaginationData] = useState({ currentPage: 1, totalPages: 1 });
 
-  // Retrieves all unique companies to feed into our modern dropdown
-  const { companies } = useMedicineCompanies();
+  // Hook Destructuring
+  const { getPaginatedMedicines, removeMedicine, loading: medsLoading, error: medsError } = useMedicine();
+  const { getAllMedicineManufacturers } = useMedicineManufacturer();
 
   // Modals States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,143 +31,266 @@ const MedicineList = () => {
   const [medicineToDelete, setMedicineToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Fetch Companies for Dropdown
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await getAllMedicineManufacturers({ limit: 100 });
+        const rawData = response?.data?.data || response?.data || response || [];
+        
+        if (Array.isArray(rawData)) {
+          const companyNames = rawData.map((manufacturer) => manufacturer.name).filter(Boolean);
+          setCompanies(companyNames);
+        }
+      } catch (err) {
+        console.error("Failed to fetch companies:", err);
+      }
+    };
+    fetchCompanies();
+  }, [getAllMedicineManufacturers]);
+
+  // Fetch Medicines
+  const fetchMedicinesData = useCallback(async () => {
+    try {
+      const response = await getPaginatedMedicines({
+        page,
+        limit,
+        manufacturer: selectedFilter || undefined,
+        status: statusFilter || undefined,
+        search: searchTerm || undefined
+      });
+      
+      if (response) {
+        setMedicines(response.data || []);
+        setPaginationData({
+          currentPage: response.currentPage || 1,
+          totalPages: response.totalPages || 1,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch medicines:", err);
+    }
+  }, [page, limit, selectedFilter, statusFilter, searchTerm, getPaginatedMedicines]);
+
+  useEffect(() => {
+    fetchMedicinesData();
+  }, [fetchMedicinesData]);
+
   // Handlers
+  const handlePageChange = (newPage) => setPage(newPage);
   const handleAddClick = () => { setSelectedMedicine(null); setIsModalOpen(true); };
   const handleEditClick = (medicine) => { setSelectedMedicine(medicine); setIsModalOpen(true); };
   const handleDeleteClick = (medicine) => { setMedicineToDelete(medicine); setIsDeleteModalOpen(true); };
+  
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1); 
+  };
 
   const confirmDelete = async () => {
     if (!medicineToDelete) return;
     setIsDeleting(true);
-    const result = await deleteMedicine(medicineToDelete._id);
-    setIsDeleting(false);
-    if (result.success) {
+    
+    try {
+      await removeMedicine(medicineToDelete._id);
       setIsDeleteModalOpen(false);
       setMedicineToDelete(null);
-    } else {
-      alert(`Error deleting: ${result.error}`);
+      fetchMedicinesData(); 
+    } catch (err) {
+      alert(`Error deleting: ${err}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  return (
-    <div className="p-4">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Super Admin: Medicine List</h1>
-        
-        <button 
-          onClick={handleAddClick}
-          className="bg-blue-600 whitespace-nowrap text-white px-5 py-2.5 rounded-lg shadow hover:bg-blue-700 transition font-medium text-sm w-full lg:w-auto"
-        >
-          + Add New Medicine
-        </button>
+  // Helper to render status based on Mongoose Enum
+  const renderStatusBadge = (status) => {
+    const s = status?.toLowerCase() || 'pending';
+    
+    let config = {
+      className: "bg-casual-black/10 dark:bg-white/10 text-casual-black dark:text-concrete",
+      icon: null,
+      label: s
+    };
+
+    if (s === 'final') {
+      config = {
+        className: "bg-earls-green/20 dark:bg-earls-green/30 text-earls-green",
+        icon: <HiCheck className="h-3 w-3" />,
+        label: "final"
+      };
+    } else if (s === 'pending') {
+      config = {
+        className: "bg-fascinating-magenta/20 dark:bg-fascinating-magenta/30 text-fascinating-magenta",
+        icon: <HiClock className="h-3 w-3" />,
+        label: "pending"
+      };
+    } else if (s === 'draft') {
+      config = {
+        className: "bg-sporty-blue/20 dark:bg-sporty-blue/30 text-sporty-blue",
+        icon: <HiDocumentText className="h-3 w-3" />,
+        label: "draft"
+      };
+    }
+
+    return (
+      <div className={`badge badge-sm gap-1 border-none ${config.className}`}>
+        {config.icon}
+        <span className="text-[10px] uppercase font-bold tracking-wider">{config.label}</span>
       </div>
+    );
+  };
+
+  return (
+    <div className="p-4 md:p-6 bg-base-100 dark:bg-casual-black min-h-screen font-primary text-casual-black dark:text-concrete transition-colors">
+      
+      <SectionTitle 
+        title="Medicine List" 
+        subtitle="Manage your medicine inventory, manufacturers, and statuses."
+        rightElement={
+          <button 
+            onClick={handleAddClick}
+            className="btn bg-sporty-blue hover:bg-sporty-blue/90 text-concrete border-none w-full md:w-auto font-secondary flex items-center gap-2"
+          >
+            <HiPlus className="text-xl" />
+            Add New Medicine
+          </button>
+        }
+      />
 
       {/* Filtering Toolbar */}
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap items-center gap-5">
+      <div className="bg-concrete dark:bg-white/5 p-4 rounded-box shadow-sm mb-6 flex flex-col md:flex-row items-center gap-4 border border-casual-black/5 dark:border-white/10 transition-colors">
         
-        {/* Items Per Page Filter */}
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-600 font-medium">Show:</label>
-          <select 
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm outline-none cursor-pointer hover:border-blue-400 transition"
-          >
-            <option value={10}>10 Items</option>
-            <option value={20}>20 Items</option>
-            <option value={30}>30 Items</option>
-          </select>
-        </div>
-
-        {/* 🔥 MODERN DROPDOWN FILTER 🔥 */}
-        <div className="flex items-center gap-3 flex-grow lg:flex-grow-0 z-40">
-          <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Filter by Manufacturer:</label>
-          
-          <ModernDropdown 
-            options={companies} 
-            value={selectedFilter} 
-            onChange={setSelectedFilter} 
-            placeholder="All Manufacturers"
+        {/* Search */}
+        <div className="form-control w-full md:w-auto md:flex-1 max-w-sm relative">
+          <HiMagnifyingGlass className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-casual-black/50 dark:text-concrete/50" />
+          <input 
+            type="text" 
+            placeholder="Search generic or brand..." 
+            className="input input-bordered w-full pl-10 bg-base-100 dark:bg-casual-black text-casual-black dark:text-concrete border-casual-black/20 dark:border-concrete/20 focus:border-sporty-blue dark:focus:border-sporty-blue focus:outline-none transition-colors" 
+            value={searchTerm}
+            onChange={handleSearchChange}
           />
         </div>
 
-        {/* Clear Filter Indicator */}
-        {selectedFilter && (
-          <button 
-            onClick={() => setSelectedFilter('')}
-            className="text-red-500 hover:text-red-700 text-sm font-medium transition flex items-center gap-1"
+        {/* Status Dropdown */}
+        <div className="form-control w-full md:w-48">
+          <select 
+            className="select select-bordered w-full bg-base-100 dark:bg-casual-black text-casual-black dark:text-concrete border-casual-black/20 dark:border-concrete/20 focus:border-sporty-blue focus:outline-none transition-colors"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Clear Filter
+            <option value="">All Statuses</option>
+            <option value="final">Final</option>
+            <option value="pending">Pending</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+
+        {/* Manufacturer Dropdown */}
+        <div className="form-control w-full md:w-48">
+          {companies.length === 0 ? (
+             <select disabled className="select select-bordered w-full bg-base-100 dark:bg-casual-black text-casual-black/40 dark:text-concrete/40 border-casual-black/20 dark:border-concrete/20 transition-colors">
+               <option>No Manufacturers</option>
+             </select>
+          ) : (
+             <select 
+               className="select select-bordered w-full bg-base-100 dark:bg-casual-black text-casual-black dark:text-concrete border-casual-black/20 dark:border-concrete/20 focus:border-sporty-blue focus:outline-none transition-colors"
+               value={selectedFilter}
+               onChange={(e) => { setSelectedFilter(e.target.value); setPage(1); }}
+             >
+               <option value="">All Manufacturers</option>
+               {companies.map((companyName, index) => (
+                 <option key={index} value={companyName}>{companyName}</option>
+               ))}
+             </select>
+          )}
+        </div>
+
+        {/* Clear Filters */}
+        {(selectedFilter || searchTerm || statusFilter) && (
+          <button 
+            onClick={() => { setSelectedFilter(''); setSearchTerm(''); setStatusFilter(''); setPage(1); }}
+            className="btn btn-ghost text-fascinating-magenta hover:bg-fascinating-magenta/10 w-full md:w-auto font-secondary"
+          >
+            Clear
           </button>
         )}
       </div>
       
-      {/* Loading & Error States */}
-      {loading && (
-        <div className="flex items-center justify-center p-12">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      {/* Loading State */}
+      {medsLoading && (
+        <div className="flex justify-center items-center py-20">
+          <span className="loading loading-spinner loading-lg text-sporty-blue"></span>
         </div>
       )}
       
-      {error && !loading && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
-          <p className="font-semibold">Error retrieving data:</p>
-          <p className="text-sm">{error}</p>
+      {/* Error State */}
+      {medsError && !medsLoading && (
+        <div className="alert alert-error bg-fascinating-magenta/10 text-fascinating-magenta border border-fascinating-magenta/20 shadow-sm mb-6">
+          <div className="flex items-center gap-2">
+            <HiTrash className="h-6 w-6" />
+            <div>
+              <h3 className="font-bold font-secondary">Error retrieving data</h3>
+              <div className="text-xs">{medsError}</div>
+            </div>
+          </div>
         </div>
       )}
       
-      {!loading && !error && medicines.length === 0 && (
-        <div className="bg-gray-50 border border-gray-200 p-12 rounded-xl text-center">
-          <p className="text-gray-500 text-lg font-medium">No medicines found.</p>
-          {selectedFilter && <p className="text-sm text-gray-400 mt-2">No results for <span className="font-semibold text-gray-600">"{selectedFilter}"</span>.</p>}
+      {/* Empty State */}
+      {!medsLoading && !medsError && medicines.length === 0 && (
+        <div className="bg-concrete dark:bg-white/5 p-12 rounded-box text-center shadow-sm border border-casual-black/5 dark:border-white/10 transition-colors">
+          <p className="text-casual-black/70 dark:text-concrete/70 text-lg font-medium font-secondary">No medicines found.</p>
+          {(selectedFilter || searchTerm || statusFilter) && (
+            <p className="text-sm text-casual-black/50 dark:text-concrete/50 mt-2">Try adjusting your search or filters.</p>
+          )}
         </div>
       )}
 
       {/* Data Table */}
-      {!loading && !error && medicines.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {!medsLoading && !medsError && medicines.length > 0 && (
+        <div className="bg-concrete dark:bg-[#1a1a1a] rounded-box shadow-sm overflow-hidden border border-casual-black/5 dark:border-white/10 transition-colors">
           <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
+            <table className="table table-zebra w-full text-casual-black dark:text-concrete">
+              <thead className="bg-casual-black/5 dark:bg-white/5 text-casual-black dark:text-concrete font-secondary transition-colors">
                 <tr>
-                  <th className="p-4 text-left border-b border-gray-100 font-semibold text-gray-700 text-sm">Brand Name</th>
-                  <th className="p-4 text-left border-b border-gray-100 font-semibold text-gray-700 text-sm">Generic Name</th>
-                  <th className="p-4 text-left border-b border-gray-100 font-semibold text-gray-700 text-sm">Manufacturer</th>
-                  <th className="p-4 text-left border-b border-gray-100 font-semibold text-gray-700 text-sm">Strength</th>
-                  <th className="p-4 text-left border-b border-gray-100 font-semibold text-gray-700 text-sm">Status</th>
-                  <th className="p-4 text-center border-b border-gray-100 font-semibold text-gray-700 text-sm">Actions</th>
+                  <th>Brand Name</th>
+                  <th>Generic Name</th>
+                  <th>Manufacturer</th>
+                  <th>Strength</th>
+                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody>
                 {medicines.map((med) => (
-                  <tr key={med._id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="p-4 text-gray-800 font-medium text-sm">{med.brandName || '-'}</td>
-                    <td className="p-4 text-gray-600 text-sm">{med.genericName || '-'}</td>
-                    <td className="p-4 text-gray-600 text-sm">{med.manufacturer || '-'}</td>
-                    <td className="p-4 text-gray-600 text-sm">{med.strength || '-'}</td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
-                        med.status === 'final' ? 'bg-green-100 text-green-700' : 
-                        med.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {med.status || 'final'}
-                      </span>
+                  <tr key={med._id} className="hover:bg-casual-black/5 dark:hover:bg-white/5 transition-colors border-b-casual-black/5 dark:border-b-white/5 border-b">
+                    <td>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 font-medium">
+                        <span>{med.brandName || '-'}</span>
+                        {renderStatusBadge(med.status)}
+                      </div>
                     </td>
-                    <td className="p-4 text-center space-x-3 whitespace-nowrap">
-                      <button onClick={() => handleEditClick(med)} className="text-blue-500 hover:text-blue-700 transition" title="Edit">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button onClick={() => handleDeleteClick(med)} className="text-red-400 hover:text-red-600 transition" title="Delete">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                    <td>{med.genericName || '-'}</td>
+                    <td>{med.manufacturer || '-'}</td>
+                    <td>{med.strength || '-'}</td>
+                    <td className="text-center">
+                      <div className="join">
+                        <button 
+                          onClick={() => handleEditClick(med)} 
+                          className="btn btn-sm btn-ghost join-item text-sporty-blue hover:bg-sporty-blue/10 hover:text-sporty-blue" 
+                          title="Edit"
+                        >
+                          <HiPencilSquare className="h-5 w-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(med)} 
+                          className="btn btn-sm btn-ghost join-item text-fascinating-magenta hover:bg-fascinating-magenta/10 hover:text-fascinating-magenta" 
+                          title="Delete"
+                        >
+                          <HiTrash className="h-5 w-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -174,17 +298,30 @@ const MedicineList = () => {
             </table>
           </div>
 
-          <Pagination 
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-          />
+          <div className="p-4 border-t border-casual-black/5 dark:border-white/10 bg-base-100 dark:bg-transparent transition-colors">
+            <Pagination 
+              currentPage={paginationData.currentPage}
+              totalPages={paginationData.totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </div>
       )}
 
-      {/* Modals */}
-      <MedicineFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} medicine={selectedMedicine} onSuccess={refetch} />
-      <ConfirmDeleteModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={confirmDelete} itemName={medicineToDelete?.brandName || medicineToDelete?.genericName || 'this item'} isDeleting={isDeleting} />
+      <MedicineFormModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        medicine={selectedMedicine} 
+        onSuccess={fetchMedicinesData} 
+        companies={companies}  
+      />
+      <ConfirmDeleteModal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)} 
+        onConfirm={confirmDelete} 
+        itemName={medicineToDelete?.brandName || medicineToDelete?.genericName || 'this item'} 
+        isDeleting={isDeleting} 
+      />
     </div>
   );
 };
