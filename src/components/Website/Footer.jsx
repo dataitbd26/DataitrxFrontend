@@ -1,15 +1,16 @@
 import React from 'react';
-import { 
-  Stethoscope, 
-  ChevronRight, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Facebook, 
-  Twitter, 
-  Linkedin, 
-  Globe, 
-  Send 
+import { Link } from 'react-router-dom';
+import {
+  Stethoscope,
+  ChevronRight,
+  Phone,
+  Mail,
+  MapPin,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Globe,
+  Send
 } from 'lucide-react';
 
 const Footer = ({ setActiveSection }) => {
@@ -41,7 +42,7 @@ const Footer = ({ setActiveSection }) => {
             <ul className="space-y-4 text-sm">
               {['Home', 'About', 'Expertise', 'Blog', 'Contact'].map((item) => (
                 <li key={item}>
-                  <button 
+                  <button
                     onClick={() => setActiveSection(item.toLowerCase())}
                     className="hover:text-teal-600 transition-colors flex items-center gap-2"
                   >
@@ -74,9 +75,9 @@ const Footer = ({ setActiveSection }) => {
             <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-8">Newsletter</h4>
             <p className="text-xs mb-4">Subscribe for the latest health tips and updates.</p>
             <div className="flex gap-2">
-              <input 
-                type="email" 
-                placeholder="Email" 
+              <input
+                type="email"
+                placeholder="Email"
                 className="bg-slate-900 border-none rounded-lg px-4 py-2 text-sm w-full focus:ring-1 focus:ring-teal-600"
               />
               <button className="bg-teal-600 text-white p-2 rounded-lg hover:bg-teal-700 transition-colors">
@@ -86,11 +87,13 @@ const Footer = ({ setActiveSection }) => {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-900 flex flex-col md:row justify-between items-center gap-6 text-xs">
-          <p>© 2024 Dr. Quazi Abdullah Al Masum. All rights reserved.</p>
-          <div className="flex gap-8">
-            <a href="#" className="hover:text-teal-600 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-teal-600 transition-colors">Terms of Service</a>
+        <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-xs w-full text-center md:text-left">
+          <p>© {new Date().getFullYear()} Dr. Quazi Abdullah Al Masum. All rights reserved.</p>
+          <div className="flex flex-wrap justify-center gap-4 md:gap-8">
+            <Link to="/privacy-policy" className="hover:text-teal-600 transition-colors">Privacy Policy</Link>
+            <Link to="/terms-of-use" className="hover:text-teal-600 transition-colors">Terms of Use</Link>
+            <Link to="/cookie-policy" className="hover:text-teal-600 transition-colors">Cookie Policy</Link>
+            <Link to="/refund-policy" className="hover:text-teal-600 transition-colors">Refund Policy</Link>
           </div>
         </div>
       </div>
