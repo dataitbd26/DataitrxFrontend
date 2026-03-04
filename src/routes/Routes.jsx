@@ -23,11 +23,12 @@ import ManagePermissions from "../pages/Admin/ManagePermissions";
 import ManageEmail from "../pages/Admin/ManageEmail";
 import ManageSms from "../pages/Admin/ManageSms";
 import ManageSystem from "../pages/Admin/ManageSystem";
+import CreatePrescription from "../pages/Admin/CreatePrescription";
 import Logout from "../pages/Admin/Logout";
 
 
-import SAroot from "./Root/Superadmin/Sroot"; 
-import SuperAdminHome from "../pages/Superadmin/Home"; 
+import SAroot from "./Root/Superadmin/Sroot";
+import SuperAdminHome from "../pages/Superadmin/Home";
 import SADashboard from "../pages/Superadmin/Dashboard";
 import MedicineList from "../pages/Superadmin/MedicineList";
 import MedicineCompanies from "../pages/Superadmin/MedicineCompanies";
@@ -58,7 +59,7 @@ export const router = createBrowserRouter([
     element: <Root />,
     errorElement: <Error404 />,
     children: [
-      { path: "/", element: <Home />  },
+      { path: "/", element: <Home /> },
       { path: "/about", element: <About /> },
       { path: "/blog", element: <Blog /> },
       { path: "/contact", element: <Contact /> },
@@ -78,6 +79,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard",
         element: <PrivateRoot><Dashboard /></PrivateRoot>,
+      },
+      {
+        path: "/create-prescription",
+        element: <PrivateRoot><CreatePrescription /></PrivateRoot>,
       },
       {
         path: "/prescriptions",
@@ -140,7 +145,7 @@ export const router = createBrowserRouter([
 
   // 3. Super Admin Routes Wrapped in SAroot Layout
   {
-    element: <SAroot />, 
+    element: <SAroot />,
     errorElement: <Error404 />,
     children: [
       // Legacy redirect/home from your previous setup
@@ -152,7 +157,7 @@ export const router = createBrowserRouter([
         path: "/superadmin/home",
         element: <PrivateRoot><SuperAdminHome /></PrivateRoot>,
       },
-      
+
       // New Super Admin Routes
       {
         path: "/super-admin/dashboard",
@@ -204,7 +209,7 @@ export const router = createBrowserRouter([
       },
 
       {
-        path: "/sa-logout", 
+        path: "/sa-logout",
         element: <PrivateRoot><SALogout /></PrivateRoot>,
       },
     ],
