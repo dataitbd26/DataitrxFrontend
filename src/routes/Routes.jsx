@@ -26,8 +26,8 @@ import ManageSystem from "../pages/Admin/ManageSystem";
 import Logout from "../pages/Admin/Logout";
 
 
-import SAroot from "./Root/Superadmin/Sroot"; 
-import SuperAdminHome from "../pages/Superadmin/Home"; 
+import SAroot from "./Root/Superadmin/Sroot";
+import SuperAdminHome from "../pages/Superadmin/Home";
 import SADashboard from "../pages/Superadmin/Dashboard";
 import MedicineList from "../pages/Superadmin/MedicineList";
 import MedicineCompanies from "../pages/Superadmin/MedicineCompanies";
@@ -47,10 +47,14 @@ import About from "../pages/About";
 import Blog from "../pages/Blog";
 import Contact from "../pages/Contact";
 import Expertise from "../pages/Expertise";
+import TermsOfUse from "../pages/TermsOfUse";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import CookiePolicy from "../pages/CookiePolicy";
+import RefundPolicy from "../pages/RefundPolicy";
 
-// import SelectChamber from "../pages/SelectChamber";
-// import TodaysAppointments from "../pages/TodaysAppointments";
-// import BookingConfirmation from "../pages/BookingConfirmation";
+import SelectChamber from "../pages/SelectChamber";
+import TodaysAppointments from "../pages/TodaysAppointments";
+import BookingConfirmation from "../pages/BookingConfirmation";
 
 export const router = createBrowserRouter([
   {
@@ -58,14 +62,18 @@ export const router = createBrowserRouter([
     element: <Root />,
     errorElement: <Error404 />,
     children: [
-      { path: "/", element: <Home />  },
+      { path: "/", element: <Home /> },
       { path: "/about", element: <About /> },
       { path: "/blog", element: <Blog /> },
       { path: "/contact", element: <Contact /> },
       { path: "/expertise", element: <Expertise /> },
-      // { path: "/booking-confirmation", element: <BookingConfirmation /> },
-      // { path: "/select-chamber", element: <SelectChamber /> },
-      // { path: "/todays-appointments", element: <TodaysAppointments /> },
+      { path: "/terms-of-use", element: <TermsOfUse /> },
+      { path: "/privacy-policy", element: <PrivacyPolicy /> },
+      { path: "/cookie-policy", element: <CookiePolicy /> },
+      { path: "/refund-policy", element: <RefundPolicy /> },
+      { path: "/booking-confirmation", element: <BookingConfirmation /> },
+      { path: "/select-chamber", element: <SelectChamber /> },
+      { path: "/todays-appointments", element: <TodaysAppointments /> },
       { path: "/login", element: <Login />, },
     ],
   },
@@ -140,7 +148,7 @@ export const router = createBrowserRouter([
 
   // 3. Super Admin Routes Wrapped in SAroot Layout
   {
-    element: <SAroot />, 
+    element: <SAroot />,
     errorElement: <Error404 />,
     children: [
       // Legacy redirect/home from your previous setup
@@ -152,7 +160,7 @@ export const router = createBrowserRouter([
         path: "/superadmin/home",
         element: <PrivateRoot><SuperAdminHome /></PrivateRoot>,
       },
-      
+
       // New Super Admin Routes
       {
         path: "/super-admin/dashboard",
@@ -204,7 +212,7 @@ export const router = createBrowserRouter([
       },
 
       {
-        path: "/sa-logout", 
+        path: "/sa-logout",
         element: <PrivateRoot><SALogout /></PrivateRoot>,
       },
     ],
