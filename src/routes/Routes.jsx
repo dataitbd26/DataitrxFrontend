@@ -48,10 +48,14 @@ import About from "../pages/About";
 import Blog from "../pages/Blog";
 import Contact from "../pages/Contact";
 import Expertise from "../pages/Expertise";
+import TermsOfUse from "../pages/TermsOfUse";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import CookiePolicy from "../pages/CookiePolicy";
+import RefundPolicy from "../pages/RefundPolicy";
 
-// import SelectChamber from "../pages/SelectChamber";
-// import TodaysAppointments from "../pages/TodaysAppointments";
-// import BookingConfirmation from "../pages/BookingConfirmation";
+import SelectChamber from "../pages/SelectChamber";
+import TodaysAppointments from "../pages/TodaysAppointments";
+import BookingConfirmation from "../pages/BookingConfirmation";
 
 export const router = createBrowserRouter([
   {
@@ -64,9 +68,13 @@ export const router = createBrowserRouter([
       { path: "/blog", element: <Blog /> },
       { path: "/contact", element: <Contact /> },
       { path: "/expertise", element: <Expertise /> },
-      // { path: "/booking-confirmation", element: <BookingConfirmation /> },
-      // { path: "/select-chamber", element: <SelectChamber /> },
-      // { path: "/todays-appointments", element: <TodaysAppointments /> },
+      { path: "/terms-of-use", element: <TermsOfUse /> },
+      { path: "/privacy-policy", element: <PrivacyPolicy /> },
+      { path: "/cookie-policy", element: <CookiePolicy /> },
+      { path: "/refund-policy", element: <RefundPolicy /> },
+      { path: "/booking-confirmation", element: <BookingConfirmation /> },
+      { path: "/select-chamber", element: <SelectChamber /> },
+      { path: "/todays-appointments", element: <TodaysAppointments /> },
       { path: "/login", element: <Login />, },
     ],
   },
