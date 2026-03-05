@@ -23,6 +23,7 @@ import ManagePermissions from "../pages/Admin/ManagePermissions";
 import ManageEmail from "../pages/Admin/ManageEmail";
 import ManageSms from "../pages/Admin/ManageSms";
 import ManageSystem from "../pages/Admin/ManageSystem";
+import CreatePrescription from "../pages/Admin/CreatePrescription";
 import Logout from "../pages/Admin/Logout";
 
 
@@ -86,6 +87,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard",
         element: <PrivateRoot><Dashboard /></PrivateRoot>,
+      },
+      {
+        path: "/create-prescription",
+        element: <PrivateRoot><CreatePrescription /></PrivateRoot>,
       },
       {
         path: "/prescriptions",

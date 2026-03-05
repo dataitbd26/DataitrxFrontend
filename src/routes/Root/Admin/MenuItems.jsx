@@ -11,8 +11,8 @@ import {
   MdSecurity,
   MdEmail,
   MdPermDeviceInformation,
-  MdMedication, 
-  MdFactCheck,  
+  MdMedication,
+  MdFactCheck,
   MdLogout
 } from "react-icons/md";
 
@@ -25,9 +25,20 @@ const useMenuItems = () => {
       icon: <MdDashboard className="text-lg" />,
     },
     {
-      title: "Manage Prescriptions",
-      path: "/prescriptions",
+      title: "Prescription",
       icon: <MdMedication className="text-lg" />,
+      list: [
+        {
+          title: "Create Prescription",
+          path: "/create-prescription",
+          icon: <MdMedication className="text-lg" />,
+        },
+        {
+          title: "Manage Prescriptions",
+          path: "/prescriptions",
+          icon: <MdMedication className="text-lg" />,
+        }
+      ]
     },
     {
       title: "Manage Appointment",
@@ -59,7 +70,7 @@ const useMenuItems = () => {
       path: "/profile",
       icon: <MdPerson className="text-lg" />,
     },
-        {
+    {
       title: "Payment Collection",
       path: "/payment",
       icon: <MdPerson className="text-lg" />,
@@ -90,7 +101,7 @@ const useMenuItems = () => {
           icon: <MdMessage className="text-lg" />,
         },
         {
-          title: "Manage System", 
+          title: "Manage System",
           path: "/settings/system",
           icon: <MdPermDeviceInformation className="text-lg" />,
         },
