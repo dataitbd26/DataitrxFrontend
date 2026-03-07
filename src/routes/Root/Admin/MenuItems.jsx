@@ -37,6 +37,11 @@ const useMenuItems = () => {
           title: "Manage Prescriptions",
           path: "/prescriptions",
           icon: <MdMedication className="text-lg" />,
+        },
+        {
+          title: "Prescription Template",
+          path: "/prescription-template",
+          icon: <MdMedication className="text-lg" />,
         }
       ]
     },

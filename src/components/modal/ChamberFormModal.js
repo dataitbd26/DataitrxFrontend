@@ -14,6 +14,9 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
         mobileNumber: '',
         description: '',
         advanceBookingDays: 7,
+        consultancyFee: '',
+        oldConsultancyFee: '',
+        followUpDay: 0,
         branch: '',
         schedule: DAYS_OF_WEEK.map(day => ({
             day,
@@ -37,6 +40,9 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
                 mobileNumber: chamber.mobileNumber || '',
                 description: chamber.description || '',
                 advanceBookingDays: chamber.advanceBookingDays || 7,
+                consultancyFee: chamber.consultancyFee || '',
+                oldConsultancyFee: chamber.oldConsultancyFee || '',
+                followUpDay: chamber.followUpDay || 0,
                 branch: chamber.branch || currentBranch || '',
                 schedule: mappedSchedule
             });
@@ -47,7 +53,10 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
                 mobileNumber: '',
                 description: '',
                 advanceBookingDays: 7,
-                branch: currentBranch || '', // Automatically set the branch context for new chambers
+                consultancyFee: '',
+                oldConsultancyFee: '',
+                followUpDay: 0,
+                branch: currentBranch || '',
                 schedule: DAYS_OF_WEEK.map(day => ({
                     day,
                     startTime: '',
@@ -81,7 +90,7 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
         // Filter out schedules that are completely empty (unless holiday) and ensure branch is attached
         const cleanedData = {
             ...formData,
-            branch: currentBranch || formData.branch, // Force the AuthContext branch
+            branch: currentBranch || formData.branch,
             schedule: formData.schedule.filter(s => s.isHoliday || (s.startTime && s.endTime))
         };
 
@@ -123,6 +132,7 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
                     )}
 
                     <form id="chamberForm" onSubmit={handleSubmit} className="space-y-5">
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="form-control">
                                 <label className="label"><span className="label-text font-medium dark:text-concrete">Chamber Name *</span></label>
@@ -148,9 +158,44 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
                                 />
                             </div>
 
-                            {/* Branch Input is removed to enforce the AuthContext branch silently */}
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-medium dark:text-concrete">Consultancy Fee (New) *</span></label>
+                                <input
+                                    type="number"
+                                    name="consultancyFee"
+                                    value={formData.consultancyFee}
+                                    onChange={handleChange}
+                                    required
+                                    min="0"
+                                    className="input input-bordered bg-transparent border-casual-black/20 dark:border-white/20 dark:text-concrete focus:border-sporty-blue"
+                                />
+                            </div>
 
-                            <div className="form-control md:col-span-2">
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-medium dark:text-concrete">Consultancy Fee (Old)</span></label>
+                                <input
+                                    type="number"
+                                    name="oldConsultancyFee"
+                                    value={formData.oldConsultancyFee}
+                                    onChange={handleChange}
+                                    min="0"
+                                    className="input input-bordered bg-transparent border-casual-black/20 dark:border-white/20 dark:text-concrete focus:border-sporty-blue"
+                                />
+                            </div>
+
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-medium dark:text-concrete">Follow-up Window (Days)</span></label>
+                                <input
+                                    type="number"
+                                    name="followUpDay"
+                                    value={formData.followUpDay}
+                                    onChange={handleChange}
+                                    min="0"
+                                    className="input input-bordered bg-transparent border-casual-black/20 dark:border-white/20 dark:text-concrete focus:border-sporty-blue"
+                                />
+                            </div>
+
+                            <div className="form-control">
                                 <label className="label"><span className="label-text font-medium dark:text-concrete">Advance Booking (Days)</span></label>
                                 <input
                                     type="number"

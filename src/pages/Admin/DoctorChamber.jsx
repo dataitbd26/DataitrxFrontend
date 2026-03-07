@@ -8,7 +8,9 @@ import {
   HiMapPin,
   HiBuildingOffice,
   HiClock,
-  HiInformationCircle
+  HiInformationCircle,
+  HiBanknotes,
+  HiArrowPath
 } from "react-icons/hi2";
 import useChamber from '../../Hook/useChamber';
 import ChamberFormModal from '../../components/modal/ChamberFormModal';
@@ -171,6 +173,31 @@ const DoctorChamber = () => {
                         <HiPhone className="h-4 w-4" />
                       </div>
                       <span className="font-medium pt-0.5">{chamber.mobileNumber || '-'}</span>
+                    </div>
+
+                    {/* Fees Section */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg shrink-0">
+                        <HiBanknotes className="h-4 w-4" />
+                      </div>
+                      <span className="pt-0.5 flex items-center gap-2 flex-wrap">
+                        <span>New: <strong className="text-casual-black dark:text-concrete">{chamber.consultancyFee ? `৳${chamber.consultancyFee}` : 'N/A'}</strong></span>
+                        {chamber.oldConsultancyFee && (
+                          <span className="text-xs border-l border-casual-black/20 dark:border-concrete/20 pl-2">
+                            Old: <strong className="text-casual-black dark:text-concrete">৳{chamber.oldConsultancyFee}</strong>
+                          </span>
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Follow Up Section */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg shrink-0">
+                        <HiArrowPath className="h-4 w-4" />
+                      </div>
+                      <span className="pt-0.5">
+                        Follow-up: <strong className="text-casual-black dark:text-concrete">{chamber.followUpDay ? `Within ${chamber.followUpDay} Days` : 'N/A'}</strong>
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-3">
