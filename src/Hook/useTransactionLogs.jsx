@@ -12,24 +12,68 @@ export const useTransactionLogs = (limit = 10) => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalLogs, setTotalLogs] = useState(0);
 
+  /**
+   * Maps frontend filter keys to backend parameter names.
+   * Adjust this object if your API expects different query param names.
+   */
+  const filterKeyMapping = {
+    search: 'search',        // change to 'q' or 'userName' if needed
+    branch: 'branch',
+    status: 'status',
+    transactionType: 'transactionType',
+    statusCode: 'statusCode',
+    startDate: 'startDate',
+    endDate: 'endDate',
+  };
+
+  /**
+   * Transforms filter values to the format expected by the backend.
+   * Modify this function based on your backend's requirements.
+   */
+  const transformFilterValue = (key, value) => {
+    if (!value || value.trim === '') return undefined;
+
+    switch (key) {
+      case 'status':
+        // Example: if backend expects 'Success' (capitalised), uncomment the next line
+        // return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+        return value.toLowerCase(); // default: lowercase
+
+      case 'statusCode':
+        // Convert to number if possible, otherwise omit
+        const num = Number(value);
+        return isNaN(num) ? undefined : num;
+
+      case 'search':
+        // Trim whitespace and remove extra spaces
+        return value.trim();
+
+      default:
+        return value;
+    }
+  };
+
   const fetchLogs = useCallback(async (page = 1, filters = {}) => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('authToken') || localStorage.getItem('adminToken');
-      
-      // Clean up empty filters to keep URL clean
-      const activeFilters = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== '')
-      );
 
-      const queryParams = new URLSearchParams({
+      // Build query parameters with transformed values and mapped keys
+      const params = new URLSearchParams({
         page,
         limit,
-        ...activeFilters
-      }).toString();
+      });
 
-      const response = await fetch(`http://localhost:5000/api/transaction-logs/paginated?${queryParams}`, {
+      Object.entries(filters).forEach(([key, value]) => {
+        const transformedValue = transformFilterValue(key, value);
+        if (transformedValue !== undefined && transformedValue !== '') {
+          const mappedKey = filterKeyMapping[key] || key; // fallback to original key
+          params.append(mappedKey, transformedValue);
+        }
+      });
+
+      const response = await fetch(`http://localhost:5000/api/transaction-logs/paginated?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -60,7 +104,7 @@ export const useTransactionLogs = (limit = 10) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Server failed to delete record');
 
-    // Synchronize UI by re-fetching current page data with active filters
+    // Re-fetch current page with active filters to keep UI consistent
     await fetchLogs(currentPage, currentFilters);
     return data;
   };
