@@ -1,44 +1,74 @@
+// TransactionLogTable.jsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useTransactionLogs } from '../../Hook/useTransactionLogs';
 import SectionTitle from "../../components/common/SectionTitle";
 import Pagination from "../../components/common/Pagination";
-import FilterDropdown from '../../components/common/FilterDropdown'; // Ensure this path is correct
+import FilterDropdown from '../../components/common/FilterDropdown';
+import useAuth from "../../Hook/useAuth.jsx";
+import useBranch from "../../Hook/useBranch.jsx";
 
 const TransactionLogTable = () => {
   const { logs, loading, error, currentPage, totalPages, totalLogs, fetchLogs, deleteLog } = useTransactionLogs(10);
+  const { user } = useAuth();
+  const { getBranchDoctorNames } = useBranch();
 
   // 1. Filter State Management
   const initialFilters = {
     search: '', branch: '', status: '', transactionType: '',
-    statusCode: '', startDate: '', endDate: ''
+    startDate: '', endDate: ''
   };
   const [filters, setFilters] = useState(initialFilters);
+  const [dynamicBranchOptions, setDynamicBranchOptions] = useState([]);
 
-  // 2. Dropdown Options
-  const branchOptions = [
-    { label: 'chef', value: 'chef' },
-    { label: 'chefsspecial', value: 'chefsspecial' },
-    { label: 'demo', value: 'demo' },
-    { label: 'teaxo', value: 'teaxo' },
-  ];
+  // 2. Fetch Dynamic Branch Options
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await getBranchDoctorNames();
+        const branchData = Array.isArray(response) ? response : [];
+        
+        const options = branchData.map(b => {
+          const branchValue = typeof b === 'object' ? (b.branch || b.branchName || b.name) : b;
+          return {
+            label: branchValue || "Unknown Branch", 
+            value: branchValue
+          };
+        });
+        
+        // Remove duplicates if any exist in the response
+        const uniqueOptions = Array.from(new Set(options.map(a => a.value)))
+          .map(value => options.find(a => a.value === value))
+          .filter(option => option.value); // Filter out empty/null values
 
+        setDynamicBranchOptions(uniqueOptions);
+      } catch (err) {
+        console.error("Failed to load branches:", err);
+        toast.error("Failed to load branch filters");
+      }
+    };
+
+    if (getBranchDoctorNames) {
+      fetchBranches();
+    }
+  }, [getBranchDoctorNames]);
+
+  // 3. Static Dropdown Options
   const statusOptions = [
     { label: 'Failed', value: 'failed' },
     { label: 'Success', value: 'success' },
     { label: 'Pending', value: 'pending' },
   ];
 
-  // 3. Trigger fetch when filters or page change
-  // We use a slight delay for text inputs to avoid spamming the backend
+  // 4. Trigger fetch when filters or page change
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      fetchLogs(1, filters); // Reset to page 1 on new filter
-    }, 500); // 500ms debounce
+      // Pass the complete filters object to fetchLogs, ensuring branch is included
+      fetchLogs(1, filters);
+    }, 500);
     return () => clearTimeout(delayDebounceFn);
   }, [filters, fetchLogs]);
 
-  // Load initial data (also handled by the dependency array above, but explicitly clear)
   const handlePageChange = (newPage) => {
     fetchLogs(newPage, filters);
   };
@@ -51,7 +81,7 @@ const TransactionLogTable = () => {
     setFilters(initialFilters);
   };
 
-  // 4. Helper Functions
+  // 5. Helper Functions
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleString('en-US', {
@@ -74,7 +104,7 @@ const TransactionLogTable = () => {
     if (!window.confirm("Permanently delete this transaction log?")) return;
 
     try {
-      await deleteLog(id, filters); // Pass filters so UI stays consistent
+      await deleteLog(id, filters);
       toast.success("Transaction log purged successfully.");
     } catch (err) {
       toast.error(err.message);
@@ -118,7 +148,7 @@ const TransactionLogTable = () => {
             placeholder="All Branches"
             value={filters.branch} 
             onChange={(val) => handleFilterChange('branch', val)} 
-            options={branchOptions} 
+            options={dynamicBranchOptions} 
           />
 
           <FilterDropdown 
@@ -136,17 +166,6 @@ const TransactionLogTable = () => {
               placeholder="e.g., login" 
               value={filters.transactionType}
               onChange={(e) => handleFilterChange('transactionType', e.target.value)}
-              className="bg-[#181818]/5 dark:bg-[#f2f2f2]/5 border border-[#181818]/10 dark:border-[#f2f2f2]/10 rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-[#147bff] transition-all text-[#181818] dark:text-[#f2f2f2]"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#181818]/50 dark:text-[#f2f2f2]/50 ml-1">Status Code</label>
-            <input 
-              type="text" 
-              placeholder="e.g., 500" 
-              value={filters.statusCode}
-              onChange={(e) => handleFilterChange('statusCode', e.target.value)}
               className="bg-[#181818]/5 dark:bg-[#f2f2f2]/5 border border-[#181818]/10 dark:border-[#f2f2f2]/10 rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-[#147bff] transition-all text-[#181818] dark:text-[#f2f2f2]"
             />
           </div>
@@ -171,7 +190,7 @@ const TransactionLogTable = () => {
             />
           </div>
 
-          <div className="flex items-end justify-start md:justify-end">
+          <div className="flex items-end justify-start md:justify-end md:col-span-2 lg:col-span-2">
             <button 
               onClick={resetFilters}
               className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#181818]/50 hover:text-[#cd3c84] dark:text-[#f2f2f2]/50 dark:hover:text-[#cd3c84] transition-colors flex items-center gap-2"
