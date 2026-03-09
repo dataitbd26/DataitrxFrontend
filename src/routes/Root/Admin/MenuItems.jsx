@@ -13,7 +13,8 @@ import {
   MdPermDeviceInformation,
   MdMedication,
   MdFactCheck,
-  MdLogout
+  MdLogout,
+  MdLanguage
 } from "react-icons/md";
 
 const useMenuItems = () => {
@@ -109,6 +110,11 @@ const useMenuItems = () => {
           title: "Manage System",
           path: "/settings/system",
           icon: <MdPermDeviceInformation className="text-lg" />,
+        },
+        {
+          title: "Website Profile",
+          path: "/settings/website-profile",
+          icon: <MdLanguage className="text-lg" />,
         },
       ]
     },

@@ -23,6 +23,7 @@ import ManagePermissions from "../pages/Admin/ManagePermissions";
 import ManageEmail from "../pages/Admin/ManageEmail";
 import ManageSms from "../pages/Admin/ManageSms";
 import ManageSystem from "../pages/Admin/ManageSystem";
+import WebsiteProfile from "../pages/Admin/WebsiteProfile";
 import CreatePrescription from "../pages/Admin/CreatePrescription";
 import PrescriptionTemplate from "../pages/Admin/PrescriptionTemplate";
 import Logout from "../pages/Admin/Logout";
@@ -148,6 +149,10 @@ export const router = createBrowserRouter([
       {
         path: "/settings/system",
         element: <PrivateRoot><ManageSystem /></PrivateRoot>,
+      },
+      {
+        path: "/settings/website-profile",
+        element: <PrivateRoot><WebsiteProfile /></PrivateRoot>,
       },
       {
         path: "/logout",

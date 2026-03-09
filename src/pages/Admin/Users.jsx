@@ -130,7 +130,7 @@ const Users = () => {
     <div className="p-4 md:p-6 bg-base-100 dark:bg-casual-black min-h-screen font-primary text-casual-black dark:text-concrete transition-colors">
 
       <SectionTitle
-        title={`${branch || 'Branch'} Users`}
+        title="Manage Users"
         subtitle="Manage users specific to your branch."
         rightElement={
           <button

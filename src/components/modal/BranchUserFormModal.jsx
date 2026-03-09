@@ -132,10 +132,7 @@ const BranchUserFormModal = ({ isOpen, onClose, user, currentBranch, onSuccess }
 
                 <div className="p-6 overflow-y-auto font-primary flex-1">
                     {/* Branch Lock Info */}
-                    <div className="flex items-center gap-2 mb-6 p-3 bg-sporty-blue/10 text-sporty-blue rounded-lg border border-sporty-blue/20">
-                        <HiShieldExclamation className="h-5 w-5" />
-                        <span className="text-sm font-medium">This user will be strictly assigned to: <strong>{currentBranch}</strong></span>
-                    </div>
+
 
                     {(error || formError) && (
                         <div className="alert alert-error bg-fascinating-magenta/10 text-fascinating-magenta border border-fascinating-magenta/20 shadow-sm mb-4 text-sm">
