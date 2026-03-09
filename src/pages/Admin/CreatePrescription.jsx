@@ -6,6 +6,7 @@ import { ICONS } from './../../components/Prescription/Icons';
 
 export default function CreatePrescription() {
   const [activeTab, setActiveTab] = useState('patient');
+  
 
   // 1. Add state for the active language (Default to 'EN')
   const [language, setLanguage] = useState('EN');
@@ -36,7 +37,7 @@ export default function CreatePrescription() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex flex-col h-screen bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden font-sans transition-colors duration-300">
 
       {/* Inner Header */}
       <header className="h-14 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0 z-20 transition-colors duration-300">
@@ -70,7 +71,7 @@ export default function CreatePrescription() {
             </button>
           </div>
 
-          <button className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 rounded-full transition-all">
+          <button  className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 rounded-full transition-all">
             <ICONS.Close size={20} />
           </button>
         </div>
