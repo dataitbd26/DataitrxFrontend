@@ -12,6 +12,7 @@ const usePatient = () => {
         try {
             // Endpoint: /patients/:branch/get-all
             const { data } = await axiosSecure.get(`/patients/${branch}/get-all`, { params });
+            // console.log("Fetched Patients:", data);
             return data;
         } catch (err) {
             const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
