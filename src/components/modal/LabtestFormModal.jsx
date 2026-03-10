@@ -6,6 +6,7 @@ const LabtestFormModal = ({ isOpen, onClose, labtest, onSuccess, departments = [
   const [formData, setFormData] = useState({
     testName: '',
     department: '',
+    status: 'pending', // ADDED: Default status
   });
 
   const [formError, setFormError] = useState('');
@@ -18,11 +19,13 @@ const LabtestFormModal = ({ isOpen, onClose, labtest, onSuccess, departments = [
       setFormData({
         testName: labtest.testName || '',
         department: labtest.department || '',
+        status: labtest.status || 'pending', // ADDED: Load existing status
       });
     } else {
       setFormData({
         testName: '',
         department: '',
+        status: 'pending',
       });
     }
     setFormError('');
@@ -64,7 +67,7 @@ const LabtestFormModal = ({ isOpen, onClose, labtest, onSuccess, departments = [
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-casual-black/50 backdrop-blur-sm p-4">
       <div className="bg-base-100 dark:bg-casual-black w-full max-w-lg rounded-box shadow-xl border border-casual-black/10 dark:border-white/10 flex flex-col max-h-[90vh]">
-        
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-casual-black/10 dark:border-white/10 flex justify-between items-center bg-concrete dark:bg-white/5 rounded-t-box">
           <h2 className="text-xl font-bold text-casual-black dark:text-concrete font-secondary">
@@ -84,19 +87,19 @@ const LabtestFormModal = ({ isOpen, onClose, labtest, onSuccess, departments = [
           )}
 
           <form id="labtest-form" onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
-            
+
             {/* Test Name */}
             <div className="form-control w-full">
               <label className="label">
                 <span className="label-text text-casual-black dark:text-concrete font-medium">Test Name *</span>
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="testName"
                 value={formData.testName}
                 onChange={handleChange}
-                placeholder="e.g. Complete Blood Count (CBC)" 
-                className="input input-bordered w-full bg-base-100 dark:bg-[#1a1a1a] border-casual-black/20 dark:border-concrete/20 focus:border-sporty-blue" 
+                placeholder="e.g. Complete Blood Count (CBC)"
+                className="input input-bordered w-full bg-base-100 dark:bg-[#1a1a1a] border-casual-black/20 dark:border-concrete/20 focus:border-sporty-blue"
                 required
               />
             </div>
@@ -111,7 +114,7 @@ const LabtestFormModal = ({ isOpen, onClose, labtest, onSuccess, departments = [
                   <option>Loading departments...</option>
                 </select>
               ) : (
-                <select 
+                <select
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
@@ -128,21 +131,38 @@ const LabtestFormModal = ({ isOpen, onClose, labtest, onSuccess, departments = [
               )}
             </div>
 
+            {/* ADDED: Status Dropdown */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text text-casual-black dark:text-concrete font-medium">Status</span>
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="select select-bordered w-full bg-base-100 dark:bg-[#1a1a1a] border-casual-black/20 dark:border-concrete/20 focus:border-sporty-blue transition-colors"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+
           </form>
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-casual-black/10 dark:border-white/10 flex justify-end gap-3 bg-concrete dark:bg-white/5 rounded-b-box">
-          <button 
-            type="button" 
-            onClick={onClose} 
+          <button
+            type="button"
+            onClick={onClose}
             className="btn btn-ghost text-casual-black dark:text-concrete font-secondary"
             disabled={isSubmitting}
           >
             Cancel
           </button>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             form="labtest-form"
             className="btn bg-sporty-blue hover:bg-sporty-blue/90 text-concrete border-none font-secondary min-w-[100px]"
             disabled={isSubmitting}
