@@ -12,6 +12,7 @@
     "axios": "^1.7.9",
     "cra-template": "1.2.0",
     "daisyui": "^4.12.23",
+    "dayjs": "^1.11.19",
     "dom-to-image": "^2.6.0",
     "file-saver": "^2.0.5",
     "firebase": "^11.2.0",

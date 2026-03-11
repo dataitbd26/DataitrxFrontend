@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import Sidebar from './../../components/Prescription/Sidebar';
 import PrescriptionPreview from './../../components/Prescription/PrescriptionPreview';
 import RightPanel from './../../components/Prescription/RightPanel';
 import { ICONS } from './../../components/Prescription/Icons';
-import axios from 'axios';
+
+// ✨ Import the hook and context
+import usePrescription from '../../Hook/usePrescription';
+import { AuthContext } from '../../providers/AuthProvider';
 
 export default function CreatePrescription() {
   const [activeTab, setActiveTab] = useState('patient');
   const [language, setLanguage] = useState('EN');
 
+  // ✨ Get the branch from AuthContext
+  const { branch } = useContext(AuthContext);
+
+  // ✨ Initialize the custom hook
+  const { createPrescription, loading } = usePrescription();
+
   const [prescriptionData, setPrescriptionData] = useState({
-    patient: { name: '', age: '', gender: '' },
+    patient: { name: '', age: '', gender: '', phone: '' }, // Added phone to match schema
     vitals: { bp: '', weight: '', pulse: '', temp: '', height: '', spo2: '' },
     complaints: [],
     complaintsText: '',
@@ -34,18 +43,40 @@ export default function CreatePrescription() {
     }));
   };
 
-  // ✨ The function that actually sends the data
+  // ✨ The updated function that sends the data via the hook
   const handleSave = async () => {
+    // Basic validation based on your schema requirements
+    if (!prescriptionData.patient.name) {
+      alert("Patient name is required!");
+      return;
+    }
+
+    if (!branch) {
+      alert("Branch information is missing. Please log in again.");
+      return;
+    }
+
     try {
-      console.log("Sending data to database:", prescriptionData);
-      
-      // 🔌 Replace with your actual backend URL when ready
-      // await axios.post('http://localhost:5000/api/prescriptions', prescriptionData);
-      
+      // Construct the payload mapping exactly to your Mongoose schema
+      const payload = {
+        ...prescriptionData,
+        branch: branch,
+        status: 'Completed' // Optional: Default is already set in schema
+      };
+
+      console.log("Sending data to backend:", payload);
+
+      // 🔌 Call the post method from your hook
+      await createPrescription(payload);
+
       alert("Prescription saved successfully!");
+
+      // Optional: Clear the form or redirect the user here
+
     } catch (error) {
       console.error("Error saving prescription:", error);
-      alert("Failed to save prescription.");
+      // The hook already parses the error message, so we can just display it
+      alert(error || "Failed to save prescription.");
     }
   };
 
@@ -91,13 +122,20 @@ export default function CreatePrescription() {
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* ✨ Passed onSave={handleSave} down to the Sidebar */}
-        <Sidebar 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          language={language} 
-          onSave={handleSave} 
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          language={language}
+          onSave={handleSave}
         />
+
+        {/* Optional: Add a loading overlay while saving */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-50 flex items-center justify-center">
+            <span className="text-cyan-600 font-bold">Saving Prescription...</span>
+          </div>
+        )}
+
         <PrescriptionPreview data={prescriptionData} language={language} />
         <RightPanel activeTab={activeTab} data={prescriptionData} updateData={updateData} language={language} />
       </div>
