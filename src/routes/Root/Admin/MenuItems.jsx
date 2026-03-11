@@ -14,7 +14,8 @@ import {
   MdMedication,
   MdFactCheck,
   MdLogout,
-  MdLanguage
+  MdLanguage,
+  MdArticle
 } from "react-icons/md";
 
 const useMenuItems = () => {
@@ -85,6 +86,11 @@ const useMenuItems = () => {
       title: "Send SMS",
       path: "/send-sms",
       icon: <MdMessage className="text-lg" />,
+    },
+    {
+      title: "Manage Blog",
+      path: "/admin/blog",
+      icon: <MdArticle className="text-lg" />,
     },
 
     {

@@ -27,6 +27,7 @@ import WebsiteProfile from "../pages/Admin/WebsiteProfile";
 import CreatePrescription from "../pages/Admin/CreatePrescription";
 import PrescriptionTemplate from "../pages/Admin/PrescriptionTemplate";
 import Logout from "../pages/Admin/Logout";
+import AdminBlog from "../pages/Admin/Blog";
 
 
 import SAroot from "./Root/Superadmin/Sroot";
@@ -157,6 +158,10 @@ export const router = createBrowserRouter([
       {
         path: "/logout",
         element: <PrivateRoot><Logout /></PrivateRoot>,
+      },
+      {
+        path: "/admin/blog",
+        element: <PrivateRoot><AdminBlog /></PrivateRoot>,
       },
     ],
   },
