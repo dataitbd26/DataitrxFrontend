@@ -2,7 +2,8 @@ import React from 'react';
 import { ICONS } from './Icons';
 import { FileText } from 'lucide-react';
 
-export default function Sidebar({ activeTab, setActiveTab, language }) {
+// ✨ Accepted onSave in the props here
+export default function Sidebar({ activeTab, setActiveTab, language, onSave }) {
   // Simple translation map for the sidebar
   const dict = {
     EN: {
@@ -13,9 +14,9 @@ export default function Sidebar({ activeTab, setActiveTab, language }) {
     },
     BN: {
       patient: 'রোগী', vitals: 'শারীরিক লক্ষণ', complaints: 'প্রধান সমস্যা',
-      history: 'পূর্বের ইতিহাস', examination: 'শারীরিক পরীক্ষা', diagnosis: 'রোগ নির্ণয়',
+      history: 'পূর্বের ইতিহাস', examination: 'শারীরিক পরীক্ষা', diagnosis: 'রোগ নির্ণয়',
       investigations: 'পরীক্ষা-নিরীক্ষা', medicines: 'ওষুধ (Rx)', advice: 'পরামর্শ ও ফলোআপ',
-      interactions: 'ড্রাগ ইন্টারেকশন', save: 'সেভ করুন', print: 'প্রিন্ট', share: 'শেয়ার', template: 'টেমপ্লেট'
+      interactions: 'ড্রাগ ইন্টারেকশন', save: 'সেভ করুন', print: 'প্রিন্ট', share: 'শেয়ার', template: 'টেমপ্লেট'
     }
   };
 
@@ -75,10 +76,16 @@ export default function Sidebar({ activeTab, setActiveTab, language }) {
       </div>
 
       <div className="p-4 border-t border-slate-100 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800 transition-colors duration-300">
-        <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all shadow-sm">
+        
+        {/* ✨ Attached onClick={onSave} to the button */}
+        <button 
+          onClick={onSave} 
+          className="w-full bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all shadow-sm"
+        >
           <ICONS.Save size={18} />
           {t.save}
         </button>
+
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => window.print()}

@@ -3,12 +3,10 @@ import Sidebar from './../../components/Prescription/Sidebar';
 import PrescriptionPreview from './../../components/Prescription/PrescriptionPreview';
 import RightPanel from './../../components/Prescription/RightPanel';
 import { ICONS } from './../../components/Prescription/Icons';
+import axios from 'axios';
 
 export default function CreatePrescription() {
   const [activeTab, setActiveTab] = useState('patient');
-  
-
-  // 1. Add state for the active language (Default to 'EN')
   const [language, setLanguage] = useState('EN');
 
   const [prescriptionData, setPrescriptionData] = useState({
@@ -36,6 +34,21 @@ export default function CreatePrescription() {
     }));
   };
 
+  // ✨ The function that actually sends the data
+  const handleSave = async () => {
+    try {
+      console.log("Sending data to database:", prescriptionData);
+      
+      // 🔌 Replace with your actual backend URL when ready
+      // await axios.post('http://localhost:5000/api/prescriptions', prescriptionData);
+      
+      alert("Prescription saved successfully!");
+    } catch (error) {
+      console.error("Error saving prescription:", error);
+      alert("Failed to save prescription.");
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden font-sans transition-colors duration-300">
 
@@ -49,7 +62,6 @@ export default function CreatePrescription() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* 2. Implement the Language Toggle Logic */}
           <div className="flex bg-slate-100 dark:bg-gray-700 p-1 rounded-lg transition-colors">
             <button
               onClick={() => setLanguage('EN')}
@@ -71,7 +83,7 @@ export default function CreatePrescription() {
             </button>
           </div>
 
-          <button  className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 rounded-full transition-all">
+          <button className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 rounded-full transition-all">
             <ICONS.Close size={20} />
           </button>
         </div>
@@ -79,8 +91,13 @@ export default function CreatePrescription() {
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* You can now pass the 'language' state down to your components if you want to translate the UI */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} language={language} />
+        {/* ✨ Passed onSave={handleSave} down to the Sidebar */}
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          language={language} 
+          onSave={handleSave} 
+        />
         <PrescriptionPreview data={prescriptionData} language={language} />
         <RightPanel activeTab={activeTab} data={prescriptionData} updateData={updateData} language={language} />
       </div>
