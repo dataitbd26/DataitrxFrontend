@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ICONS } from '../../components/Prescription/Icons';
 import { CHIPS_DATA } from '../../data/chips';
 
@@ -10,7 +10,7 @@ import MedicinesPanel from './MedicinesPanel';
 import AdvicePanel from './AdvicePanel';
 import InteractionsPanel from './InteractionsPanel';
 
-// Shared Components used in the RightPanel (and inside some sub-panels)
+// Shared Component used in the RightPanel (and inside some sub-panels)
 export const ChipGroup = ({ items, selected = [], onToggle }) => (
   <div className="flex flex-wrap gap-2">
     {items.map((item) => {
@@ -31,21 +31,110 @@ export const ChipGroup = ({ items, selected = [], onToggle }) => (
   </div>
 );
 
-export const TextArea = ({ value, onChange, placeholder }) => (
-  <textarea
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    placeholder={placeholder}
-    className="w-full h-32 p-3 text-sm border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none resize-none bg-slate-50 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-colors"
-  />
-);
-
 const SectionHeader = ({ icon: Icon, title }) => (
   <div className="p-4 border-b border-slate-100 dark:border-gray-700 flex items-center gap-2 text-cyan-700 dark:text-cyan-400 bg-white dark:bg-gray-800 sticky top-0 z-10 transition-colors duration-300">
     <Icon size={20} />
     <h2 className="font-bold text-slate-800 dark:text-gray-100">{title}</h2>
   </div>
 );
+
+// ✨ UPDATED: Extracted Component (Text Area Removed)
+const TextAndChipPanel = ({ activeTab, data, updateData, t, handleToggle }) => {
+  const [customItem, setCustomItem] = useState('');
+
+  const handleAddCustom = (e) => {
+    e.preventDefault(); // Prevent form from refreshing the page
+    const trimmed = customItem.trim();
+    
+    if (trimmed) {
+      const current = data[activeTab] || [];
+      // Only add if it doesn't already exist
+      if (!current.includes(trimmed)) {
+        updateData(activeTab, [...current, trimmed]);
+      }
+      setCustomItem(''); // Clear input field
+    }
+  };
+
+  // Merge default chips with custom selected chips and remove duplicates
+  const standardChips = CHIPS_DATA[activeTab] || [];
+  const selectedChips = data[activeTab] || [];
+  const allChips = Array.from(new Set([...standardChips, ...selectedChips]));
+
+  return (
+    <div className="p-4 flex flex-col h-full">
+      {/* 🛑 TextArea was removed from here */}
+
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        
+        {/* Removable Bullet Text Section */}
+        {selectedChips.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+              Selected Items
+            </h3>
+            <ul className="flex flex-col gap-2">
+              {selectedChips.map((item, index) => (
+                <li 
+                  key={index} 
+                  className="flex items-start justify-between bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300 px-3 py-2 rounded-lg border border-cyan-100 dark:border-cyan-800/50 text-sm shadow-sm"
+                >
+                  <span className="flex items-center gap-2 mt-0.5">
+                    <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-cyan-500"></span>
+                    <span className="leading-snug">{item}</span>
+                  </span>
+                  
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleToggle(activeTab, item);
+                    }}
+                    className="ml-3 p-1 shrink-0 text-cyan-600 dark:text-cyan-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all"
+                    title="Remove item"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <h3 className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+          {t.quickPick}
+        </h3>
+
+        {/* Custom Input Form */}
+        <form onSubmit={handleAddCustom} className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={customItem}
+            onChange={(e) => setCustomItem(e.target.value)}
+            placeholder="Type and press Enter to add..."
+            className="flex-1 p-2 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-cyan-500 outline-none transition-colors"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-slate-100 dark:bg-gray-600 hover:bg-slate-200 dark:hover:bg-gray-500 text-slate-700 dark:text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            Add
+          </button>
+        </form>
+
+        <ChipGroup
+          items={allChips}
+          selected={selectedChips}
+          onToggle={(item) => handleToggle(activeTab, item)}
+        />
+      </div>
+    </div>
+  );
+};
 
 export default function RightPanel({ activeTab, data, updateData, language }) {
   // Translation Dictionary
@@ -99,29 +188,20 @@ export default function RightPanel({ activeTab, data, updateData, language }) {
       case 'interactions':
         return <InteractionsPanel data={data} t={t} />;
       
-      // Grouping these together because they share the exact same Text + Chips layout
       case 'complaints':
       case 'history':
       case 'examination':
       case 'diagnosis':
         return (
-          <div className="p-4 flex flex-col h-full">
-            <div className="mb-4">
-              <TextArea
-                value={data[`${activeTab}Text`]}
-                onChange={(val) => updateData(`${activeTab}Text`, val)}
-                placeholder={t.typeDetails}
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <h3 className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3">{t.quickPick}</h3>
-              <ChipGroup
-                items={CHIPS_DATA[activeTab] || []}
-                selected={data[activeTab]}
-                onToggle={(item) => handleToggle(activeTab, item)}
-              />
-            </div>
-          </div>
+          // ✨ Using the key={activeTab} trick completely resets the custom input state when you switch tabs!
+          <TextAndChipPanel
+            key={activeTab} 
+            activeTab={activeTab}
+            data={data}
+            updateData={updateData}
+            t={t}
+            handleToggle={handleToggle}
+          />
         );
 
       default:
