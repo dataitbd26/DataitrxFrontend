@@ -30,7 +30,7 @@ export default function PatientPanel({ data, updateData }) {
       return;
     }
 
-    const { name, phone } = data.patient;
+    const { name, phone, _id } = data.patient;
     
     // Only search if name >= 3 chars or phone >= 4 chars
     const hasSearchTerm = (name && name.length >= 3) || (phone && phone.length >= 4);
@@ -81,6 +81,7 @@ export default function PatientPanel({ data, updateData }) {
     isAutoFilling.current = true; // Flag to prevent the useEffect from re-triggering a search
 
     updateData('patient', {
+      patientId: patient._id || '',
       name: patient.fullName || patient.name || '', 
       phone: patient.phone || '',
       age: patient.age?.toString() || '', 
