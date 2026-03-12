@@ -1,25 +1,37 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from './../../components/Prescription/Sidebar';
 import PrescriptionPreview from './../../components/Prescription/PrescriptionPreview';
 import RightPanel from './../../components/Prescription/RightPanel';
 import { ICONS } from './../../components/Prescription/Icons';
 
-// ✨ Import the hook and context
+// ✨ Import the hooks and context
 import usePrescription from '../../Hook/usePrescription';
+import useChamber from '../../Hook/useChamber';
+import useDoctorProfile from '../../Hook/useDoctorProfile';
 import { AuthContext } from '../../providers/AuthProvider';
+import usePatient from '../../Hook/usePatient';
+
+console.log("usePatient Hook Imported:", usePatient); // Debugging line to confirm import
 
 export default function CreatePrescription() {
   const [activeTab, setActiveTab] = useState('patient');
   const [language, setLanguage] = useState('EN');
 
-  // ✨ Get the branch from AuthContext
-  const { branch } = useContext(AuthContext);
+  // ✨ Get the branch and user (doctor) from AuthContext
+  const { branch, user } = useContext(AuthContext);
 
-  // ✨ Initialize the custom hook
-  const { createPrescription, loading } = usePrescription();
+  // ✨ Initialize the custom hooks
+  const { createPrescription, loading: isSaving } = usePrescription();
+  const { getChambersByBranch } = useChamber();
+  const { getProfilesByBranch } = useDoctorProfile();
+
+  // ✨ States for Dynamic Header & Routing
+  const [chambers, setChambers] = useState([]);
+  const [selectedChamber, setSelectedChamber] = useState(null);
+  const [doctorProfile, setDoctorProfile] = useState(null);
 
   const [prescriptionData, setPrescriptionData] = useState({
-    patient: { name: '', age: '', gender: '', phone: '' }, // Added phone to match schema
+    patient: { name: '', age: '', gender: '', phone: '',  },
     vitals: { bp: '', weight: '', pulse: '', temp: '', height: '', spo2: '' },
     complaints: [],
     complaintsText: '',
@@ -36,6 +48,37 @@ export default function CreatePrescription() {
     followUp: ''
   });
 
+  // ✨ Fetch Doctor Profile and Chambers on Mount
+  useEffect(() => {
+    const fetchHeaderData = async () => {
+      if (!branch) return;
+      
+      try {
+        // Fire both requests concurrently for better performance
+        const [profileRes, chamberRes] = await Promise.all([
+          getProfilesByBranch(branch, { page: 1, limit: 1 }),
+          getChambersByBranch(branch, { page: 1, limit: 50 })
+        ]);
+
+        // 1. Set Doctor Profile
+        if (profileRes?.data && profileRes.data.length > 0) {
+          setDoctorProfile(profileRes.data[0]); 
+        }
+
+        // 2. Set Chambers and default to the first one
+        if (chamberRes?.data && chamberRes.data.length > 0) {
+          setChambers(chamberRes.data);
+          setSelectedChamber(chamberRes.data[0]); 
+        }
+
+      } catch (err) {
+        console.error("Failed to fetch data for prescription header:", err);
+      }
+    };
+
+    fetchHeaderData();
+  }, [branch, getProfilesByBranch, getChambersByBranch]);
+
   const updateData = (field, value) => {
     setPrescriptionData(prev => ({
       ...prev,
@@ -45,23 +88,33 @@ export default function CreatePrescription() {
 
   // ✨ The updated function that sends the data via the hook
   const handleSave = async () => {
-    // Basic validation based on your schema requirements
+    const { name, patientId } = prescriptionData.patient;
     if (!prescriptionData.patient.name) {
       alert("Patient name is required!");
       return;
     }
 
-    if (!branch) {
-      alert("Branch information is missing. Please log in again.");
+    // Safely extract the Doctor ID from either the fetched profile or the auth user
+    const finalDoctorId = doctorProfile?._id || user?._id || user?.id;
+
+    if (!branch || !finalDoctorId) {
+      alert("Doctor or Branch information is missing. Please log in again.");
       return;
     }
 
     try {
+      // ✨ FIX: Generate a unique prescriptionId to satisfy MongoDB's unique index
+      const uniquePrescriptionId = `RX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
       // Construct the payload mapping exactly to your Mongoose schema
       const payload = {
         ...prescriptionData,
+        prescriptionId: uniquePrescriptionId, // ✨ Attached the unique ID here
         branch: branch,
-        status: 'Completed' // Optional: Default is already set in schema
+        patientId: patientId,
+        doctorId: finalDoctorId, // ✨ Safely attached the Doctor ID
+        chamberId: selectedChamber?._id || null, // ✨ Attach the specific Chamber ID
+        status: 'Completed' 
       };
 
       console.log("Sending data to backend:", payload);
@@ -75,7 +128,6 @@ export default function CreatePrescription() {
 
     } catch (error) {
       console.error("Error saving prescription:", error);
-      // The hook already parses the error message, so we can just display it
       alert(error || "Failed to save prescription.");
     }
   };
@@ -93,7 +145,26 @@ export default function CreatePrescription() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 dark:bg-gray-700 p-1 rounded-lg transition-colors">
+          
+          {/* ✨ Chamber Selector Dropdown */}
+          {chambers.length > 0 && (
+            <select 
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              value={selectedChamber?._id || ''}
+              onChange={(e) => {
+                const selected = chambers.find(c => c._id === e.target.value);
+                setSelectedChamber(selected);
+              }}
+            >
+              {chambers.map(chamber => (
+                <option key={chamber._id} value={chamber._id}>
+                  {chamber.chamberName}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <div className="flex bg-slate-100 dark:bg-gray-700 p-1 rounded-lg transition-colors ml-2">
             <button
               onClick={() => setLanguage('EN')}
               className={`px-3 py-1 text-xs font-bold rounded transition-all ${language === 'EN'
@@ -130,13 +201,22 @@ export default function CreatePrescription() {
         />
 
         {/* Optional: Add a loading overlay while saving */}
-        {loading && (
-          <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-50 flex items-center justify-center">
-            <span className="text-cyan-600 font-bold">Saving Prescription...</span>
+        {isSaving && (
+          <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-50 flex items-center justify-center backdrop-blur-sm">
+            <span className="text-cyan-600 font-bold flex items-center gap-2">
+               <span className="loading loading-spinner loading-md"></span> Saving Prescription...
+            </span>
           </div>
         )}
 
-        <PrescriptionPreview data={prescriptionData} language={language} />
+        {/* ✨ Pass the fetched doctor and chamber down to the preview */}
+        <PrescriptionPreview 
+          data={prescriptionData} 
+          language={language} 
+          doctor={doctorProfile}
+          chamber={selectedChamber}
+        />
+        
         <RightPanel activeTab={activeTab} data={prescriptionData} updateData={updateData} language={language} />
       </div>
     </div>
