@@ -5,34 +5,23 @@ import { AuthContext } from '../../providers/AuthProvider'; // Adjust path if ne
 import PatientSearchModal from '../../components/modal/PatientSearchModal'; // Make sure to import your modal!
 
 export default function PatientPanel({ data, updateData }) {
-  // 1. Get the dynamic branch from AuthContext
   const { branch } = useContext(AuthContext); 
+  const { getPatientsByBranch, error } = usePatient(); // createPatient removed
   
-  // 2. Initialize the hook
-  const { getPatientsByBranch, error } = usePatient();
-  
-  // Search States
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Use a ref to prevent searching when a user clicks a result to auto-fill
   const isAutoFilling = useRef(false);
 
-  // 3. Inline Search Effect based on Name or Phone input
   useEffect(() => {
-    // If we are currently auto-filling from a click, don't trigger a new search
     if (isAutoFilling.current) {
-      isAutoFilling.current = false; // reset
+      isAutoFilling.current = false;
       return;
     }
 
-    const { name, phone, _id } = data.patient;
-    
-    // Only search if name >= 3 chars or phone >= 4 chars
+    const { name, phone } = data.patient;
     const hasSearchTerm = (name && name.length >= 3) || (phone && phone.length >= 4);
 
     if (!hasSearchTerm) {
@@ -41,7 +30,6 @@ export default function PatientPanel({ data, updateData }) {
       return;
     }
 
-    // Determine what to send to backend (prioritize phone if both exist)
     const searchTerm = phone && phone.length >= 4 ? phone : name;
 
     const timerId = setTimeout(async () => {
@@ -52,11 +40,10 @@ export default function PatientPanel({ data, updateData }) {
 
         const response = await getPatientsByBranch(branch, { 
           search: searchTerm,
-          limit: 10, // Limit inline results
+          limit: 10,
           page: 1
         });
         
-        // Handle response mapping
         if (response?.success) {
           setSearchResults(response.data || []);
         } else if (response?.data) {
@@ -76,20 +63,20 @@ export default function PatientPanel({ data, updateData }) {
     return () => clearTimeout(timerId);
   }, [data.patient.name, data.patient.phone, getPatientsByBranch, branch]);
 
-  // Handle selecting a patient from either the inline dropdown OR the modal
   const handleSelectPatient = (patient) => {
-    isAutoFilling.current = true; // Flag to prevent the useEffect from re-triggering a search
+    isAutoFilling.current = true;
 
     updateData('patient', {
       patientId: patient._id || '',
       name: patient.fullName || patient.name || '', 
       phone: patient.phone || '',
+      email: patient.email || '', 
       age: patient.age?.toString() || '', 
       gender: patient.gender || ''
     });
     
     setShowDropdown(false); 
-    setIsModalOpen(false); // Ensure modal closes if selection came from there
+    setIsModalOpen(false); 
   };
 
   return (
@@ -102,7 +89,7 @@ export default function PatientPanel({ data, updateData }) {
         </label>
         <input
           type="text"
-          value={data.patient.name}
+          value={data.patient.name || ''}
           onChange={(e) => updateData('patient', { ...data.patient, name: e.target.value })}
           className="w-full p-2.5 border-2 border-cyan-500 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white outline-none focus:ring-4 focus:ring-cyan-500/20 transition-all shadow-sm"
           placeholder="Type to search..."
@@ -117,7 +104,7 @@ export default function PatientPanel({ data, updateData }) {
           </label>
           <input
             type="text"
-            value={data.patient.age}
+            value={data.patient.age || ''}
             onChange={(e) => updateData('patient', { ...data.patient, age: e.target.value })}
             className="w-full p-2.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 rounded-lg text-sm dark:text-white focus:border-cyan-500 outline-none transition-colors"
             placeholder=""
@@ -135,6 +122,20 @@ export default function PatientPanel({ data, updateData }) {
             placeholder="Type to search..."
           />
         </div>
+      </div>
+
+      {/* Email Field */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-slate-500 dark:text-gray-400 mb-1">
+          Email (optional)
+        </label>
+        <input
+          type="email"
+          value={data.patient.email || ''}
+          onChange={(e) => updateData('patient', { ...data.patient, email: e.target.value })}
+          className="w-full p-2.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 rounded-lg text-sm dark:text-white focus:border-cyan-500 outline-none transition-colors"
+          placeholder="patient@example.com"
+        />
       </div>
 
       {/* Gender Buttons */}
@@ -157,7 +158,7 @@ export default function PatientPanel({ data, updateData }) {
         </div>
       </div>
 
-      {/* Manual "Select Existing" Button - Now opens the Modal */}
+      {/* Manual "Select Existing" Button */}
       <button 
         onClick={() => setIsModalOpen(true)}
         className="w-full flex items-center justify-center gap-2 py-2.5 mb-2 bg-slate-50 hover:bg-slate-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-200 rounded-lg font-medium border border-slate-200 dark:border-gray-600 transition-colors"
@@ -172,8 +173,6 @@ export default function PatientPanel({ data, updateData }) {
       <div className="mt-auto pt-2 min-h-[150px]">
         {showDropdown && (
           <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-            
-            {/* Header / Loading state */}
             <div className="bg-slate-50 dark:bg-gray-800/80 px-3 py-2 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                 {isSearching ? 'Searching...' : 'Matched Patients'}
@@ -182,8 +181,6 @@ export default function PatientPanel({ data, updateData }) {
                 <div className="w-3.5 h-3.5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
               )}
             </div>
-
-            {/* List */}
             <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
               {!isSearching && searchResults.length === 0 ? (
                 <div className="p-4 text-center text-sm text-slate-400 italic">
@@ -210,7 +207,6 @@ export default function PatientPanel({ data, updateData }) {
         )}
       </div>
 
-      {/* --- RENDER THE MODAL COMPONENT --- */}
       <PatientSearchModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 

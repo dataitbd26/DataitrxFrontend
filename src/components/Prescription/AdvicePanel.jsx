@@ -5,28 +5,69 @@ export default function AdvicePanel({ data, updateData, t, handleToggle }) {
   // Track which input is active to show quick picks
   const [activeField, setActiveField] = useState(null);
 
+  // NEW: States for the custom text add mechanism
+  const [customAdvice, setCustomAdvice] = useState('');
+  const [customChips, setCustomChips] = useState([]);
+
   // Fallback chips just in case CHIPS_DATA.advice is empty/undefined
-  const adviceChips = CHIPS_DATA?.advice || [
+  const baseAdviceChips = CHIPS_DATA?.advice || [
     'Rest', 'Drink fluids', 'Avoid oily food', 'Light diet', 'Exercise',
     'Monitor BP', 'Avoid cold water', 'Take rest for 3 days',
     'Follow up if symptoms persist', 'Avoid smoking'
   ];
 
+  // Combine original chips with dynamically added ones
+  const adviceChips = [...baseAdviceChips, ...customChips];
+
+  // Handler to add custom text as a selected chip
+  const handleAddCustomAdvice = (e) => {
+    e.preventDefault();
+    const newAdvice = customAdvice.trim();
+    if (newAdvice) {
+      if (!adviceChips.includes(newAdvice)) {
+        setCustomChips([...customChips, newAdvice]);
+      }
+      handleToggle('advice', newAdvice); // Auto-select the newly added item
+      setCustomAdvice('');
+    }
+  };
+
   return (
     <div className="p-4 flex flex-col h-full overflow-y-auto custom-scrollbar">
       
-      {/* Advice Text Area */}
-      <div className="mb-6">
-        <textarea
-          value={data.adviceText || ''}
-          onFocus={() => setActiveField('advice')}
-          onBlur={() => setActiveField(null)}
-          onChange={(e) => updateData('adviceText', e.target.value)}
-          placeholder={t.typeDetails || "Lifestyle advice, dietary recommendations..."}
-          className="w-full h-32 p-3 text-sm border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none resize-none bg-slate-50 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-colors"
-        />
+      {/* Advice Section */}
+      <div className="mb-6 advice-group">
+        
+        {/* Custom Text Add Mechanism (Replaces Textarea) */}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={customAdvice}
+            onChange={(e) => setCustomAdvice(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAddCustomAdvice(e);
+            }}
+            onFocus={() => setActiveField('advice')}
+            onBlur={(e) => {
+              // Only close if focus completely leaves the advice section
+              if (!e.currentTarget.closest('.advice-group').contains(e.relatedTarget)) {
+                setActiveField(null);
+              }
+            }}
+            placeholder={t.typeDetails || "Add custom advice..."}
+            className="flex-1 p-3 text-sm border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none bg-slate-50 dark:bg-gray-700 text-slate-700 dark:text-white dark:placeholder-gray-400 transition-colors"
+          />
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()} // Prevent losing focus when clicking button
+            onClick={handleAddCustomAdvice}
+            className="px-4 py-3 rounded-lg text-sm font-medium bg-slate-100 dark:bg-gray-600 text-slate-700 dark:text-gray-200 border border-slate-200 dark:border-gray-500 hover:bg-cyan-50 dark:hover:bg-gray-500 hover:text-cyan-700 hover:border-cyan-200 transition-colors"
+          >
+            Add
+          </button>
+        </div>
 
-        {/* Show Chips ONLY when Advice text area is active */}
+        {/* Show Chips ONLY when Advice input is active */}
         {activeField === 'advice' && (
           <div className="mt-3">
             <h3 className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-2">
@@ -40,7 +81,7 @@ export default function AdvicePanel({ data, updateData, t, handleToggle }) {
                     key={item}
                     type="button"
                     onMouseDown={(e) => {
-                      e.preventDefault(); // Prevent textarea blur
+                      e.preventDefault(); // Prevent input blur
                       handleToggle('advice', item);
                     }}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
@@ -84,7 +125,7 @@ export default function AdvicePanel({ data, updateData, t, handleToggle }) {
               placeholder="Value"
             />
 
-            {/* NEW: Unit Selector */}
+            {/* Unit Selector */}
             <select
               value={data.followUpUnit || 'days'}
               onChange={(e) => updateData('followUpUnit', e.target.value)}

@@ -18,11 +18,11 @@ export default function MedicinesPanel({ data, updateData, t }) {
   const [customDurValue, setCustomDurValue] = useState('');
   const [customDurUnit, setCustomDurUnit] = useState('days');
 
-  const [medInput, setMedInput] = useState({ 
-    type: 'Tab', 
-    dosage: '1+1+1', 
-    duration: 'Continue', 
-    instruction: 'After meal' 
+  const [medInput, setMedInput] = useState({
+    type: 'Tab',
+    dosage: '1+1+1',
+    duration: 'Continue',
+    instruction: 'After meal'
   });
 
   const { getPaginatedMedicines, createMedicine, loading } = useMedicine();
@@ -41,7 +41,7 @@ export default function MedicinesPanel({ data, updateData, t }) {
       const response = await getPaginatedMedicines({
         limit: 20,
         search: search,
-        status: 'final' 
+        status: 'final'
       });
 
       const results = response?.data?.data || response?.data || response?.medicines || [];
@@ -90,9 +90,9 @@ export default function MedicinesPanel({ data, updateData, t }) {
     justSelected.current = true;
     const formattedName = `${med.brandName} ${med.strength ? med.strength : ''}`.trim();
     setSearchTerm(formattedName);
-    setMedInput(prev => ({ 
-      ...prev, 
-      type: MED_TYPES.includes(med.dosageType) ? med.dosageType : prev.type 
+    setMedInput(prev => ({
+      ...prev,
+      type: MED_TYPES.includes(med.dosageType) ? med.dosageType : prev.type
     }));
     setIsDropdownOpen(false);
   };
@@ -199,11 +199,10 @@ export default function MedicinesPanel({ data, updateData, t }) {
                 <button
                   key={type}
                   onClick={() => setMedInput({ ...medInput, type })}
-                  className={`px-3 py-1.5 text-xs rounded border transition-colors ${
-                    medInput.type === type 
-                    ? 'bg-cyan-600 border-cyan-600 text-white font-medium' 
-                    : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
-                  }`}
+                  className={`px-3 py-1.5 text-xs rounded border transition-colors ${medInput.type === type
+                      ? 'bg-cyan-600 border-cyan-600 text-white font-medium'
+                      : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
+                    }`}
                 >
                   {type}
                 </button>
@@ -218,11 +217,10 @@ export default function MedicinesPanel({ data, updateData, t }) {
                 <button
                   key={dose}
                   onClick={() => setMedInput({ ...medInput, dosage: dose })}
-                  className={`px-3 py-1.5 text-xs rounded border text-center transition-colors ${
-                    medInput.dosage === dose 
-                    ? 'bg-cyan-600 border-cyan-600 text-white font-medium' 
-                    : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
-                  }`}
+                  className={`px-3 py-1.5 text-xs rounded border text-center transition-colors ${medInput.dosage === dose
+                      ? 'bg-cyan-600 border-cyan-600 text-white font-medium'
+                      : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
+                    }`}
                 >
                   {dose}
                 </button>
@@ -240,11 +238,10 @@ export default function MedicinesPanel({ data, updateData, t }) {
                     setMedInput({ ...medInput, duration: dur });
                     setCustomDurValue(''); // Reset custom when selecting default
                   }}
-                  className={`px-3 py-1.5 text-xs rounded border text-center transition-colors ${
-                    medInput.duration === dur 
-                    ? 'bg-cyan-600 border-cyan-600 text-white font-medium' 
-                    : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
-                  }`}
+                  className={`px-3 py-1.5 text-xs rounded border text-center transition-colors ${medInput.duration === dur
+                      ? 'bg-cyan-600 border-cyan-600 text-white font-medium'
+                      : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
+                    }`}
                 >
                   {dur}
                 </button>
@@ -252,28 +249,27 @@ export default function MedicinesPanel({ data, updateData, t }) {
             </div>
             {/* Custom Duration Mechanism */}
             <div className="flex flex-col gap-1 pt-2 border-t border-slate-200 dark:border-gray-700">
-               <input 
+              <input
                 type="number"
                 placeholder="Custom"
                 value={customDurValue}
                 onChange={(e) => handleCustomDuration(e.target.value, customDurUnit)}
                 className="w-full p-1.5 text-xs bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 rounded text-center outline-none focus:ring-1 focus:ring-cyan-500"
-               />
-               <div className="flex gap-1">
-                  {['days', 'month'].map(unit => (
-                    <button
-                      key={unit}
-                      onClick={() => handleCustomDuration(customDurValue, unit)}
-                      className={`flex-1 py-1 text-[10px] rounded border uppercase font-bold ${
-                        customDurUnit === unit && customDurValue 
-                        ? 'bg-cyan-600 border-cyan-600 text-white' 
+              />
+              <div className="flex gap-1">
+                {['days', 'month'].map(unit => (
+                  <button
+                    key={unit}
+                    onClick={() => handleCustomDuration(customDurValue, unit)}
+                    className={`flex-1 py-1 text-[10px] rounded border uppercase font-bold ${customDurUnit === unit && customDurValue
+                        ? 'bg-cyan-600 border-cyan-600 text-white'
                         : 'bg-white dark:bg-gray-800 text-slate-400 border-slate-200 dark:border-gray-600'
                       }`}
-                    >
-                      {unit === 'days' ? 'Day' : 'Mon'}
-                    </button>
-                  ))}
-               </div>
+                  >
+                    {unit === 'days' ? 'Day' : 'Mon'}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -285,11 +281,10 @@ export default function MedicinesPanel({ data, updateData, t }) {
               <button
                 key={inst}
                 onClick={() => setMedInput({ ...medInput, instruction: inst })}
-                className={`px-3 py-1.5 text-xs rounded border transition-colors ${
-                  medInput.instruction === inst 
-                  ? 'bg-cyan-600 border-cyan-600 text-white font-medium' 
-                  : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
-                }`}
+                className={`px-3 py-1.5 text-xs rounded border transition-colors ${medInput.instruction === inst
+                    ? 'bg-cyan-600 border-cyan-600 text-white font-medium'
+                    : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
+                  }`}
               >
                 {inst}
               </button>
@@ -336,7 +331,8 @@ export default function MedicinesPanel({ data, updateData, t }) {
                   newMeds.splice(idx, 1);
                   updateData('medicines', newMeds);
                 }}
-                className="text-slate-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-2"
+                /* Removed opacity-0 and group-hover:opacity-100 */
+                className="text-red-600 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-all p-2"
               >
                 <ICONS.Delete size={16} />
               </button>
