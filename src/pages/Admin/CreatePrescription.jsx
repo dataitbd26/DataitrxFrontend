@@ -104,12 +104,12 @@ export default function CreatePrescription() {
 
     try {
       // ✨ FIX: Generate a unique prescriptionId to satisfy MongoDB's unique index
-      const uniquePrescriptionId = `RX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      // const uniquePrescriptionId = `RX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
       // Construct the payload mapping exactly to your Mongoose schema
       const payload = {
         ...prescriptionData,
-        prescriptionId: uniquePrescriptionId, // ✨ Attached the unique ID here
+        // prescriptionId: uniquePrescriptionId, // ✨ Attached the unique ID here
         branch: branch,
         patientId: patientId,
         doctorId: finalDoctorId, // ✨ Safely attached the Doctor ID
