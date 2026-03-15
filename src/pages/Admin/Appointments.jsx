@@ -4,13 +4,15 @@ import {
     HiPencilSquare,
     HiTrash,
     HiEye,
-    HiLockClosed,
+    HiCalendarDays,
 } from "react-icons/hi2";
 import useAppointment from '../../Hook/useAppointment';
 import useChamber from '../../Hook/useChamber';
 import AppointmentFormModal from '../../components/modal/AppointmentFormModal';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import Pagination from '../../components/common/Pagination';
+import AppointmentBlockModal from '../../components/modal/AppointmentBlockModal'; // Now importing from its own file
+import SectionTitle from '../../components/common/SectionTitle';
 import { AuthContext } from '../../providers/AuthProvider';
 
 const Appointments = () => {
@@ -28,16 +30,19 @@ const Appointments = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedDate, setSelectedDate] = useState("");
 
-    // Hooks
-    const { getAppointmentsByBranch, removeAppointment, loading: appointmentsLoading } = useAppointment();
-    const { getChambersByBranch } = useChamber();
-
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [appointmentToDelete, setAppointmentToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Time Block Modal State
+    const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+
+    // Hooks
+    const { getAppointmentsByBranch, removeAppointment, loading: appointmentsLoading } = useAppointment();
+    const { getChambersByBranch } = useChamber();
 
     const fetchDropdownData = useCallback(async () => {
         if (!branch) return;
@@ -101,41 +106,38 @@ const Appointments = () => {
 
     return (
         <div className="p-4 md:p-6 bg-base-100 dark:bg-casual-black min-h-screen font-primary text-casual-black dark:text-concrete transition-colors">
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+
+            <SectionTitle
+                title="Appointment Management"
+                subtitle={`View and manage all patient appointments (${paginationData.totalItems} total appointments)`}
+                rightElement={
+                    <button
+                        onClick={handleAddClick}
+                        className="btn bg-sporty-blue hover:bg-sporty-blue/80 text-white border-none font-secondary flex items-center gap-2 shadow-sm"
+                    >
+                        <HiPlus className="text-lg" />
+                        New Appointment
+                    </button>
+                }
+            />
+
+            {/* Date/Time Blocking Management Section */}
+            <div className="bg-sporty-blue/10 dark:bg-sporty-blue/20 border border-sporty-blue/20 dark:border-sporty-blue/30 rounded-xl p-5 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-casual-black dark:text-concrete font-secondary">Appointment Management</h1>
-                    <p className="text-sm text-casual-black/60 dark:text-concrete/60 mt-1">
-                        View and manage all patient appointments ({paginationData.totalItems} total appointments)
+                    <div className="flex items-center gap-2 mb-1">
+                        <HiCalendarDays className="text-sporty-blue text-xl" />
+                        <h3 className="font-semibold text-casual-black dark:text-concrete">Date & Time Blocking</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Block off specific time ranges for chambers and doctors so appointments cannot be booked.
                     </p>
                 </div>
                 <button
-                    onClick={handleAddClick}
-                    className="btn bg-[#008080] hover:bg-[#006666] text-white border-none font-secondary flex items-center gap-2 shadow-sm"
+                    onClick={() => setIsBlockModalOpen(true)}
+                    className="btn btn-sm bg-sporty-blue hover:bg-sporty-blue/80 text-white border-none gap-2 whitespace-nowrap"
                 >
-                    <HiPlus className="text-lg" />
-                    New Appointment
+                    <HiCalendarDays /> Manage Blocked Dates
                 </button>
-            </div>
-
-            {/* Serial Blocking Management Section */}
-            <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30 rounded-xl p-5 mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                    <HiLockClosed className="text-blue-600 dark:text-blue-400" />
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-300">Serial Blocking Management</h3>
-                </div>
-                <p className="text-sm text-blue-700/70 dark:text-blue-300/70 mb-4">
-                    Block specific serial numbers for appointments on selected dates. Blocked serials won't be available for booking.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                    <input type="date" className="input input-bordered input-sm bg-white dark:bg-transparent" />
-                    <button className="btn btn-sm bg-[#68B1B1] hover:bg-[#5A9E9E] text-white border-none gap-2">
-                        <HiLockClosed /> Block Serials
-                    </button>
-                    <button className="btn btn-sm btn-ghost border border-gray-300 dark:border-gray-600">
-                        Manage Blocked
-                    </button>
-                </div>
             </div>
 
             {/* Filters Section */}
@@ -155,30 +157,30 @@ const Appointments = () => {
                     {chambers.map(ch => <option key={ch._id} value={ch._id}>{ch.chamberName}</option>)}
                 </select>
                 <div className="flex-1 min-w-[200px] flex gap-2">
-                    <input 
-                        type="date" 
+                    <input
+                        type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="input input-bordered input-sm w-full max-w-xs bg-transparent" 
+                        className="input input-bordered input-sm w-full max-w-xs bg-transparent"
                     />
                 </div>
             </div>
 
             <div className="flex justify-between items-center mb-4">
-                <input 
-                    type="text" 
-                    placeholder="Search patient info..." 
+                <input
+                    type="text"
+                    placeholder="Search patient info..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="input input-bordered input-sm w-full max-w-xs bg-transparent" 
+                    className="input input-bordered input-sm w-full max-w-xs bg-transparent"
                 />
             </div>
 
             {/* Data Table */}
-            <div className="bg-[#EAF5F5] dark:bg-[#1a1a1a] rounded-xl overflow-hidden border border-[#D1EAEA] dark:border-white/10 shadow-sm">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="table w-full">
-                        <thead className="bg-[#008080] text-white">
+                        <thead className="bg-concrete text-casual-black">
                             <tr>
                                 <th>Appointment ID</th>
                                 <th>Serial</th>
@@ -198,7 +200,7 @@ const Appointments = () => {
                             {appointmentsLoading ? (
                                 <tr>
                                     <td colSpan="12" className="text-center py-10">
-                                        <span className="loading loading-spinner text-[#008080]"></span>
+                                        <span className="loading loading-spinner text-accent"></span>
                                     </td>
                                 </tr>
                             ) : appointments.length === 0 ? (
@@ -209,16 +211,16 @@ const Appointments = () => {
                                 </tr>
                             ) : (
                                 appointments.map((appt) => (
-                                    <tr key={appt._id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                                        <td className="font-medium text-blue-600 dark:text-blue-400">{appt.appointmentId}</td>
-                                        <td className="text-blue-600 dark:text-blue-400 font-medium">{appt.serial}</td>
+                                    <tr key={appt._id} className="border-b border-casual-black/5 dark:border-white/5 hover:bg-casual-black/5 dark:hover:bg-white/5 transition-colors">
+                                        <td className="font-medium text-sporty-blue">{appt.appointmentId}</td>
+                                        <td className="text-sporty-blue font-medium">{appt.serial}</td>
                                         <td>
                                             <div className="font-medium">{appt.patientId?.fullName || '-'}</div>
                                             <div className="text-xs text-gray-500">{appt.patientId?.gender} | {appt.patientId?.age ? `${appt.patientId.age}y` : 'N/A'}</div>
                                         </td>
                                         <td>{appt.patientId?.phone || '-'}</td>
                                         <td>
-                                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                            <span className="bg-sporty-blue text-white text-xs px-2 py-1 rounded">
                                                 {appt.patientType === 'New Patient' ? 'New' : appt.patientType === 'Old Patient' ? 'Old' : 'Report'}
                                             </span>
                                         </td>
@@ -228,14 +230,14 @@ const Appointments = () => {
                                             <div className="text-xs text-gray-500">{appt.appointmentTime}</div>
                                         </td>
                                         <td>
-                                            <span className={`px-2 py-1 rounded text-xs font-medium text-white ${appt.preCheckupId ? 'bg-teal-600' : 'bg-gray-600'}`}>
+                                            <span className={`px-2 py-1 rounded text-xs font-medium text-white ${appt.preCheckupId ? 'bg-accent' : 'bg-gray-500'}`}>
                                                 {appt.preCheckupId ? 'Completed' : 'Pending'}
                                             </span>
                                         </td>
                                         <td className="text-green-600 font-medium text-sm">৳{appt.chamberId?.consultancyFee || '0'}</td>
                                         <td>
                                             <div className="flex items-center gap-2">
-                                                <span className="bg-gray-800 text-white text-[10px] px-2 py-1 rounded uppercase tracking-wider">Unpaid</span>
+                                                <span className="bg-casual-black text-white text-[10px] px-2 py-1 rounded uppercase tracking-wider">Unpaid</span>
                                                 <button className="btn btn-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-transparent">Collect</button>
                                             </div>
                                         </td>
@@ -261,17 +263,17 @@ const Appointments = () => {
                         </tbody>
                     </table>
                 </div>
-                
-                <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-black/5 dark:border-white/5 flex justify-between items-center text-sm text-gray-500">
+
+                <div className="p-4 bg-white dark:bg-[#1a1a1a] border-t border-casual-black/5 dark:border-white/5 flex justify-between items-center text-sm text-gray-500">
                     <div>
                         Showing {(page - 1) * limit + 1 > paginationData.totalItems ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, paginationData.totalItems)} of {paginationData.totalItems} entries
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <span>Rows per page</span>
-                            <select 
-                                value={limit} 
-                                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }} 
+                            <select
+                                value={limit}
+                                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
                                 className="select select-bordered select-xs bg-transparent"
                             >
                                 <option value={10}>10</option>
@@ -297,7 +299,14 @@ const Appointments = () => {
                 onSuccess={fetchAppointmentsData}
                 currentBranch={branch}
             />
-            
+
+            <AppointmentBlockModal
+                isOpen={isBlockModalOpen}
+                onClose={() => setIsBlockModalOpen(false)}
+                chambers={chambers}
+                currentBranch={branch}
+            />
+
             <ConfirmDeleteModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}

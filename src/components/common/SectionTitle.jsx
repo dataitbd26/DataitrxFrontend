@@ -1,17 +1,17 @@
 import React from 'react';
 
-const SectionTitle = ({ 
-  title, 
-  subtitle, 
+const SectionTitle = ({
+  title,
+  subtitle,
   rightElement,
-  onAction, 
-  actionText = "Action", 
+  onAction,
+  actionText = "Action",
   actionLoadingText = "Processing...",
-  isLoading = false 
+  isLoading = false
 }) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-      
+
       {/* Left Side: Typography upgraded to DaisyUI style */}
       <div className="flex flex-col gap-1">
         <h1 className="text-[#147bff] text-2xl sm:text-3xl font-extrabold tracking-tight transition-colors m-0 leading-none">
@@ -23,13 +23,13 @@ const SectionTitle = ({
           </p>
         )}
       </div>
-      
+
       {/* Right Side: Action Elements */}
       <div className="w-full md:w-auto flex items-center gap-3">
         {rightElement ? (
           rightElement
         ) : onAction ? (
-          <button 
+          <button
             onClick={onAction}
             disabled={isLoading}
             // Styled to look like a DaisyUI `.btn .btn-primary .btn-outline` variant
@@ -46,7 +46,7 @@ const SectionTitle = ({
           </button>
         ) : null}
       </div>
-      
+
     </div>
   );
 };

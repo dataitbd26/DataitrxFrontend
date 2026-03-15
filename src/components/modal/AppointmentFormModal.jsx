@@ -11,6 +11,9 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
 
     const [chambers, setChambers] = useState([]);
 
+    // Helper to get today's date in YYYY-MM-DD format
+    const getTodayDate = () => new Date().toISOString().split('T')[0];
+
     // Patient Search State
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -27,12 +30,8 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
         gender: 'Male',
         bloodGroup: '',
         address: '',
-        emergencyName: '',
-        emergencyPhone: '',
-        allergies: '',
-        medicalHistory: '',
         chamberId: '',
-        appointmentDate: '',
+        appointmentDate: getTodayDate(), // Default to today's date
         appointmentTime: '',
         patientType: 'New Patient',
     });
@@ -52,12 +51,8 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                 gender: appointment.patientId?.gender || 'Male',
                 bloodGroup: appointment.patientId?.bloodGroup || '',
                 address: appointment.patientId?.address || '',
-                emergencyName: appointment.patientId?.emergencyContact?.name || '',
-                emergencyPhone: appointment.patientId?.emergencyContact?.phone || '',
-                allergies: appointment.patientId?.allergies || '',
-                medicalHistory: appointment.patientId?.medicalHistory || '',
                 chamberId: appointment.chamberId?._id || appointment.chamberId || '',
-                appointmentDate: appointment.appointmentDate ? new Date(appointment.appointmentDate).toISOString().split('T')[0] : '',
+                appointmentDate: appointment.appointmentDate ? new Date(appointment.appointmentDate).toISOString().split('T')[0] : getTodayDate(),
                 appointmentTime: appointment.appointmentTime || '',
                 patientType: appointment.patientType || 'New Patient',
             });
@@ -91,12 +86,8 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             gender: 'Male',
             bloodGroup: '',
             address: '',
-            emergencyName: '',
-            emergencyPhone: '',
-            allergies: '',
-            medicalHistory: '',
             chamberId: chambers.length > 0 ? chambers[0]._id : '',
-            appointmentDate: '',
+            appointmentDate: getTodayDate(), // Reset to today's date
             appointmentTime: '',
             patientType: 'New Patient',
         });
@@ -149,10 +140,6 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             gender: patient.gender || 'Male',
             bloodGroup: patient.bloodGroup || '',
             address: patient.address || '',
-            emergencyName: patient.emergencyContact?.name || '',
-            emergencyPhone: patient.emergencyContact?.phone || '',
-            allergies: patient.allergies || '',
-            medicalHistory: patient.medicalHistory || '',
             patientType: 'Old Patient',
         }));
         setSearchQuery('');
@@ -182,12 +169,6 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                 gender: formData.gender,
                 bloodGroup: formData.bloodGroup || undefined,
                 address: formData.address,
-                emergencyContact: {
-                    name: formData.emergencyName,
-                    phone: formData.emergencyPhone
-                },
-                allergies: formData.allergies,
-                medicalHistory: formData.medicalHistory
             };
             if (appointment) payload.patientId = formData.patientId;
         }
@@ -315,30 +296,6 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                                 <div className="form-control md:col-span-2">
                                     <label className="label"><span className="label-text font-medium">Address</span></label>
                                     <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="e.g., Mirpur DOHS, Dhaka, Bangladesh" className="input input-bordered w-full bg-transparent" />
-                                </div>
-                            </div>
-                        </section>
-
-                        <section>
-                            <h3 className="text-lg font-bold font-secondary text-[#008080] border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
-                                Medical & Emergency Information
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-medium">Allergies</span></label>
-                                    <input type="text" name="allergies" value={formData.allergies} onChange={handleChange} placeholder="Any known allergies" className="input input-bordered w-full bg-transparent" />
-                                </div>
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-medium">Medical History</span></label>
-                                    <input type="text" name="medicalHistory" value={formData.medicalHistory} onChange={handleChange} placeholder="Previous conditions, surgeries, etc." className="input input-bordered w-full bg-transparent" />
-                                </div>
-                                <div className="form-control border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-gray-50/50 dark:bg-gray-800/30">
-                                    <label className="label pt-0"><span className="label-text font-medium text-gray-500">Emergency Contact Name</span></label>
-                                    <input type="text" name="emergencyName" value={formData.emergencyName} onChange={handleChange} placeholder="Relative/Friend Name" className="input input-sm input-bordered w-full bg-transparent" />
-                                </div>
-                                <div className="form-control border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-gray-50/50 dark:bg-gray-800/30">
-                                    <label className="label pt-0"><span className="label-text font-medium text-gray-500">Emergency Contact Phone</span></label>
-                                    <input type="text" name="emergencyPhone" value={formData.emergencyPhone} onChange={handleChange} placeholder="+880..." className="input input-sm input-bordered w-full bg-transparent" />
                                 </div>
                             </div>
                         </section>
