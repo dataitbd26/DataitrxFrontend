@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { HiXMark, HiMagnifyingGlass } from 'react-icons/hi2';
 import useAppointment from '../../Hook/useAppointment';
 import useChamber from '../../Hook/useChamber';
 import usePatient from '../../Hook/usePatient';
+import { AuthContext } from '../../providers/AuthProvider';
 
 const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, currentBranch }) => {
+    const { chamber: authChamber } = useContext(AuthContext);
+
     const { createAppointment, updateAppointment, loading } = useAppointment();
     const { getChambersByBranch } = useChamber();
     const { getPatientsByBranch } = usePatient();
@@ -66,8 +69,9 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             const res = await getChambersByBranch(currentBranch, { limit: 100 });
             if (res && res.data) {
                 setChambers(res.data);
-                if (res.data.length > 0 && !appointment) {
-                    setFormData(prev => ({ ...prev, chamberId: res.data[0]._id }));
+                if (!appointment) {
+                    const defaultChamberId = authChamber?._id || authChamber || (res.data.length > 0 ? res.data[0]._id : '');
+                    setFormData(prev => ({ ...prev, chamberId: defaultChamberId }));
                 }
             }
         } catch (error) {
@@ -86,8 +90,8 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             gender: 'Male',
             bloodGroup: '',
             address: '',
-            chamberId: chambers.length > 0 ? chambers[0]._id : '',
-            appointmentDate: getTodayDate(), // Reset to today's date
+            chamberId: authChamber?._id || authChamber || (chambers.length > 0 ? chambers[0]._id : ''),
+            appointmentDate: getTodayDate(),
             appointmentTime: '',
             patientType: 'New Patient',
         });

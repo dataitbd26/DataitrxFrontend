@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { HiXMark, HiPlus, HiTrash, HiCalendarDays } from 'react-icons/hi2';
 import useAppointmentBlock from '../../Hook/useAppointmentBlock';
 import useDoctorProfile from '../../Hook/useDoctorProfile';
+import { AuthContext } from '../../providers/AuthProvider';
 
 const AppointmentBlockModal = ({ isOpen, onClose, chambers, currentBranch }) => {
+    const { chamber: authChamber } = useContext(AuthContext);
+
     const { getAppointmentBlocksByBranch, createAppointmentBlock, removeAppointmentBlock, loading: blockLoading } = useAppointmentBlock();
     const { getProfilesByBranch, loading: doctorLoading } = useDoctorProfile();
 
@@ -56,16 +59,15 @@ const AppointmentBlockModal = ({ isOpen, onClose, chambers, currentBranch }) => 
             fetchBlocks();
             fetchDoctor();
 
-            // Set default chamber if available
-            if (chambers && chambers.length > 0) {
-                setFormData(prev => ({ ...prev, chamberId: chambers[0]._id }));
-            }
+            const defaultChamberId = authChamber?._id || authChamber || (chambers && chambers.length > 0 ? chambers[0]._id : '');
+            setFormData(prev => ({ ...prev, chamberId: defaultChamberId }));
+
         } else {
             // Reset state when closed
             setFormData({ chamberId: '', doctorId: '', blockFrom: '', blockTo: '' });
             setCurrentDoctor(null);
         }
-    }, [isOpen, fetchBlocks, fetchDoctor, chambers]);
+    }, [isOpen, fetchBlocks, fetchDoctor, chambers, authChamber]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

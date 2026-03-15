@@ -10,6 +10,13 @@ const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("authUser");
     return storedUser ? JSON.parse(storedUser) : null;
   });
+
+  // --- ADDED CHAMBER STATE ---
+  const [chamber, setChamber] = useState(() => {
+    const storedChamber = localStorage.getItem("authChamber");
+    return storedChamber ? JSON.parse(storedChamber) : null;
+  });
+
   const [loading, setLoading] = useState(false);
   const axiosSecure = useAxiosPublic();
   const [branch, setBranch] = useState(() => {
@@ -65,10 +72,10 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem("authUser", JSON.stringify(data.user));
       localStorage.setItem("authBranch", data.user.branch);
       localStorage.setItem("authToken", data.token);
-    
+
       return data.user;
     } catch (error) {
-    
+
       throw error;
     } finally {
       setLoading(false);
@@ -78,13 +85,15 @@ const AuthProvider = ({ children }) => {
   const logoutUser = async () => {
     setLoading(true);
     try {
-      await axiosSecure.post("/user/logout", { email: user.email, clientIP });
+      await axiosSecure.post("/user/logout", { email: user?.email, clientIP });
       setUser(null);
-      setBranch(user.branch);
+      setBranch(user?.branch);
+      setChamber(null); // --- CLEAR CHAMBER ---
       localStorage.removeItem("authUser");
       localStorage.removeItem("authBranch");
       localStorage.removeItem("authToken");
       localStorage.removeItem("clientIP");
+      localStorage.removeItem("authChamber"); // --- CLEAR STORED CHAMBER ---
     } catch (error) {
     } finally {
       setLoading(false);
@@ -95,11 +104,13 @@ const AuthProvider = ({ children }) => {
     user,
     loading,
     branch,
+    chamber, // --- EXPOSED CHAMBER ---
     clientIP,
     registerUser,
     loginUser,
     logoutUser,
     setUser,
+    setChamber, // --- EXPOSED SETTER ---
   };
 
   return <AuthContext.Provider value={authInfo}>{children}</AuthContext.Provider>;

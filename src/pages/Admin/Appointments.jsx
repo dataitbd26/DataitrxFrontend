@@ -11,7 +11,7 @@ import useChamber from '../../Hook/useChamber';
 import AppointmentFormModal from '../../components/modal/AppointmentFormModal';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import Pagination from '../../components/common/Pagination';
-import AppointmentBlockModal from '../../components/modal/AppointmentBlockModal'; // Now importing from its own file
+import AppointmentBlockModal from '../../components/modal/AppointmentBlockModal';
 import SectionTitle from '../../components/common/SectionTitle';
 import { AuthContext } from '../../providers/AuthProvider';
 
@@ -19,7 +19,7 @@ const Appointments = () => {
     // Pagination & Config State
     const [limit, setLimit] = useState(10);
     const [page, setPage] = useState(1);
-    const { branch } = useContext(AuthContext);
+    const { branch, chamber: authChamber } = useContext(AuthContext);
 
     // Data State
     const [appointments, setAppointments] = useState([]);
@@ -29,6 +29,7 @@ const Appointments = () => {
     // Filter State
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedDate, setSelectedDate] = useState("");
+    const [selectedChamberFilter, setSelectedChamberFilter] = useState(authChamber?._id || authChamber || "");
 
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,6 +60,7 @@ const Appointments = () => {
         try {
             const params = { page, limit, search: searchQuery };
             if (selectedDate) params.date = selectedDate;
+            if (selectedChamberFilter) params.chamberId = selectedChamberFilter;
 
             const response = await getAppointmentsByBranch(branch, params);
 
@@ -73,7 +75,7 @@ const Appointments = () => {
         } catch (err) {
             console.error("Failed to fetch appointments:", err);
         }
-    }, [page, limit, branch, searchQuery, selectedDate, getAppointmentsByBranch]);
+    }, [page, limit, branch, searchQuery, selectedDate, selectedChamberFilter, getAppointmentsByBranch]);
 
     useEffect(() => {
         fetchDropdownData();
@@ -152,8 +154,12 @@ const Appointments = () => {
                     <option>Male</option>
                     <option>Female</option>
                 </select>
-                <select className="select select-bordered select-sm w-full md:w-auto bg-transparent">
-                    <option>All Chambers</option>
+                <select
+                    className="select select-bordered select-sm w-full md:w-auto bg-transparent"
+                    value={selectedChamberFilter}
+                    onChange={(e) => setSelectedChamberFilter(e.target.value)}
+                >
+                    <option value="">All Chambers</option>
                     {chambers.map(ch => <option key={ch._id} value={ch._id}>{ch.chamberName}</option>)}
                 </select>
                 <div className="flex-1 min-w-[200px] flex gap-2">

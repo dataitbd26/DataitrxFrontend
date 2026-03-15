@@ -10,7 +10,8 @@ import {
   HiClock,
   HiInformationCircle,
   HiBanknotes,
-  HiArrowPath
+  HiArrowPath,
+  HiUsers // <-- Added HiUsers icon here
 } from "react-icons/hi2";
 import useChamber from '../../Hook/useChamber';
 import ChamberFormModal from '../../components/modal/ChamberFormModal';
@@ -208,6 +209,17 @@ const DoctorChamber = () => {
                         Adv. Booking: <strong className="text-casual-black dark:text-concrete">{chamber.advanceBookingDays ? `${chamber.advanceBookingDays} Days` : 'N/A'}</strong>
                       </span>
                     </div>
+
+                    {/* --- Newly Added: Max Patients Section --- */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg shrink-0">
+                        <HiUsers className="h-4 w-4" />
+                      </div>
+                      <span className="pt-0.5">
+                        Max Patients/Day: <strong className="text-casual-black dark:text-concrete">{chamber.maxDailyPatient ? chamber.maxDailyPatient : 'N/A'}</strong>
+                      </span>
+                    </div>
+                    {/* ----------------------------------------- */}
 
                     {/* Styled Description Box */}
                     {chamber.description && (

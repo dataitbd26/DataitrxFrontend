@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import { Helmet } from "react-helmet";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, Sun, Moon, ArrowRight, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Sun, Moon, ArrowRight, ShieldCheck, MapPin, Building2 } from "lucide-react";
 import useAuth from "../../Hook/useAuth";
+import useChamber from "../../Hook/useChamber"; // Ensure this path is correct
 
 // Import your Data IT Rx assets
 import medicalHeroImage from "../../assets/Background/MedicalLogin.jpg";
 import Logo from "../../assets/Logo/data-it-rx-logo.svg";
 import logo_dark from "../../assets/Logo/data-it-rx-dark.svg";
+import { AuthContext } from "../../providers/AuthProvider";
 
 const Login = () => {
   // App themes: 'mytheme' (your custom config) or 'dark'
@@ -20,11 +22,18 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
+
+  // --- CHAMBER SELECTION STATE ---
+  const [showChamberModal, setShowChamberModal] = useState(false);
+  const [availableChambers, setAvailableChambers] = useState([]);
+
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
   const navigate = useNavigate();
   const { loginUser } = useAuth();
+  const { setChamber } = useContext(AuthContext); // Get setChamber from context
+  const { getChambersByBranch } = useChamber(); // Get the hook functions
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("email");
@@ -72,7 +81,10 @@ const Login = () => {
 
     setLoading(true);
     try {
-      await loginUser(email, password);
+      // 1. Authenticate user
+      const loggedInUser = await loginUser(email, password);
+
+      // Handle Remember Me
       if (rememberMe) {
         localStorage.setItem("email", email);
         localStorage.setItem("password", password);
@@ -80,20 +92,47 @@ const Login = () => {
         localStorage.removeItem("email");
         localStorage.removeItem("password");
       }
-      setLoading(false);
-      toast.success("Login Successful! Accessing Clinical Dashboard...");
-      navigate("/dashboard/");
+
+      // 2. Fetch Chambers
+      const chamberRes = await getChambersByBranch(loggedInUser.branch, { limit: 100 });
+      const chambers = chamberRes.data;
+
+      // 3. Routing Logic based on Chamber Count
+      if (chambers.length === 1) {
+        setChamber(chambers[0]);
+        localStorage.setItem("authChamber", JSON.stringify(chambers[0]));
+        setLoading(false);
+        toast.success("Login Successful! Accessing Clinical Dashboard...");
+        navigate("/dashboard/");
+      } else if (chambers.length > 1) {
+        setAvailableChambers(chambers);
+        setLoading(false);
+        setShowChamberModal(true); // Open the selection modal
+      } else {
+        setLoading(false);
+        toast.success("Login Successful! Accessing Clinical Dashboard...");
+        navigate("/dashboard/");
+      }
+
     } catch (error) {
       setLoading(false);
       Swal.fire({
         icon: 'error',
-        title: 'Authentication Failed',
-        text: 'Invalid provider email or password. Please try again.',
+        title: 'Login Failed',
+        text: 'Invalid email or password. Please try again.',
         confirmButtonColor: '#1877F2',
         background: theme === 'dark' ? '#1f2937' : '#ffffff',
         color: theme === 'dark' ? '#ffffff' : '#000000',
       });
     }
+  };
+
+  const handleSelectChamber = (selectedChamber) => {
+    setChamber(selectedChamber);
+    localStorage.setItem("authChamber", JSON.stringify(selectedChamber));
+    setShowChamberModal(false);
+    toast.success(`Welcome to ${selectedChamber.chamberName}!`);
+    navigate("/dashboard/");
   };
 
   const handlePasswordReset = (e) => {
@@ -167,7 +206,7 @@ const Login = () => {
         {/* Dynamic Gradient Overlay */}
         <div className={`absolute inset-0 z-0 transition-colors duration-700 ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900/90 via-gray-900/80 to-blue-900/60' : 'bg-gradient-to-br from-blue-50/70 via-white/40 to-blue-200/50 backdrop-blur-sm'}`}></div>
 
-        {/* Floating Particles or Shapes (optional subtle touch) */}
+        {/* Floating Particles or Shapes */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl mix-blend-multiply filter opacity-50 animate-blob"></div>
           <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl mix-blend-multiply filter opacity-50 animate-blob animation-delay-2000"></div>
@@ -182,7 +221,6 @@ const Login = () => {
           className="card w-full max-w-md bg-base-100/80 shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-10 border border-white/20 backdrop-blur-xl rounded-3xl"
         >
           <div className="card-body p-8 sm:p-10">
-
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -377,6 +415,62 @@ const Login = () => {
                     Send Reset Link
                   </motion.button>
                 </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* CHAMBER SELECTION MODAL */}
+      <AnimatePresence>
+        {showChamberModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-neutral/80 z-[60] flex justify-center items-center p-4 font-primary backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="card bg-base-100 shadow-2xl max-w-md w-full relative border border-base-content/10 rounded-3xl overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+              <div className="card-body p-8">
+
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                    <Building2 size={24} />
+                  </div>
+                  <h3 className="card-title font-secondary text-2xl text-base-content font-extrabold">Select Chamber</h3>
+                </div>
+
+                <p className="text-base-content/60 text-sm mb-6 font-medium">
+                  Please select which location you are operating from today.
+                </p>
+
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                  {availableChambers.map((ch) => (
+                    <motion.button
+                      whileHover={{ scale: 1.01, x: 4 }}
+                      whileTap={{ scale: 0.98 }}
+                      key={ch._id}
+                      onClick={() => handleSelectChamber(ch)}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border border-base-content/10 bg-base-200/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 hover:border-blue-500/30 transition-all text-left group"
+                    >
+                      <div className="bg-base-100 p-2 rounded-full shadow-sm text-base-content/40 group-hover:text-blue-500 transition-colors">
+                        <MapPin size={18} />
+                      </div>
+                      <div>
+                        <span className="block font-bold text-base-content group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{ch.chamberName}</span>
+                        <span className="block text-xs text-base-content/50 mt-0.5 line-clamp-1">{ch.address}</span>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+
               </div>
             </motion.div>
           </motion.div>

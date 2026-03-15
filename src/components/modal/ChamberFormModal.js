@@ -17,6 +17,7 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
         consultancyFee: '',
         oldConsultancyFee: '',
         followUpDay: 0,
+        maxDailyPatient: '', // <-- Added field here
         branch: '',
         schedule: DAYS_OF_WEEK.map(day => ({
             day,
@@ -43,6 +44,7 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
                 consultancyFee: chamber.consultancyFee || '',
                 oldConsultancyFee: chamber.oldConsultancyFee || '',
                 followUpDay: chamber.followUpDay || 0,
+                maxDailyPatient: chamber.maxDailyPatient || '', // <-- Populated field here
                 branch: chamber.branch || currentBranch || '',
                 schedule: mappedSchedule
             });
@@ -56,6 +58,7 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
                 consultancyFee: '',
                 oldConsultancyFee: '',
                 followUpDay: 0,
+                maxDailyPatient: '', // <-- Added field here
                 branch: currentBranch || '',
                 schedule: DAYS_OF_WEEK.map(day => ({
                     day,
@@ -206,6 +209,20 @@ const ChamberFormModal = ({ isOpen, onClose, chamber, onSuccess, currentBranch }
                                     className="input input-bordered bg-transparent border-casual-black/20 dark:border-white/20 dark:text-concrete focus:border-sporty-blue"
                                 />
                             </div>
+
+                            {/* --- Newly Added: Form Input --- */}
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-medium dark:text-concrete">Max Daily Patients</span></label>
+                                <input
+                                    type="number"
+                                    name="maxDailyPatient"
+                                    value={formData.maxDailyPatient}
+                                    onChange={handleChange}
+                                    min="0"
+                                    className="input input-bordered bg-transparent border-casual-black/20 dark:border-white/20 dark:text-concrete focus:border-sporty-blue"
+                                />
+                            </div>
+                            {/* ------------------------------- */}
                         </div>
 
                         <div className="form-control">

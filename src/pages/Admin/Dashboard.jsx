@@ -15,7 +15,8 @@ const COLORS = ['#147bff', '#a04fff', '#00bda9', '#ccc141', '#cd3c84', '#ff7f50'
 
 const BranchDashboard = () => {
   const axiosSecure = UseAxiosSecure();
-  const { branch, user } = useContext(AuthContext);
+  // --- EXTRACTED CHAMBER FROM CONTEXT ---
+  const { branch, user, chamber } = useContext(AuthContext);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,6 +125,16 @@ const BranchDashboard = () => {
               <span className="text-gray-600 font-medium flex items-center gap-1">
                 <Building2 size={16} className="text-gray-400" /> {doctorProfile?.department || "General"}
               </span>
+
+              {/* --- ADDED ACTIVE CHAMBER BADGE --- */}
+              {chamber && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <span className="badge border-info/20 bg-info/5 text-info gap-1 py-3 px-3 rounded-lg font-medium">
+                    <MapPin size={14} /> {chamber.chamberName}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -287,7 +298,7 @@ const BranchDashboard = () => {
                     <td className="text-gray-600 font-medium">{rx.doctorId?.name || "N/A"}</td>
                     <td>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${rx.status === 'Completed' ? 'bg-success/10 text-success' :
-                          rx.status === 'Draft' ? 'bg-warning/10 text-warning-content' : 'bg-error/10 text-error'
+                        rx.status === 'Draft' ? 'bg-warning/10 text-warning-content' : 'bg-error/10 text-error'
                         }`}>
                         {rx.status}
                       </span>
