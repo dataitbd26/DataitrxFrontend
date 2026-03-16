@@ -2,21 +2,20 @@ import React from 'react';
 import { ICONS } from './Icons';
 import { FileText } from 'lucide-react';
 
-// ✨ Accepted onSave in the props here
-export default function Sidebar({ activeTab, setActiveTab, language, onSave }) {
-  // Simple translation map for the sidebar
+// ✨ Accept onPrint and onExportPdf in props
+export default function Sidebar({ activeTab, setActiveTab, language, onSave, onPrint, onExportPdf }) {
   const dict = {
     EN: {
       patient: 'Patient', vitals: 'Vital Signs', complaints: 'Chief Complaints',
       history: 'History Of', examination: 'On Examination', diagnosis: 'Diagnosis',
       investigations: 'Investigations', medicines: 'Medicines (Rx)', advice: 'Advice & Follow-up',
-      interactions: 'Interactions', save: 'Save', print: 'Print', share: 'Share', template: 'Template'
+      interactions: 'Interactions', save: 'Save', print: 'Print', share: 'Share', template: 'Template', pdf: 'PDF'
     },
     BN: {
       patient: 'রোগী', vitals: 'শারীরিক লক্ষণ', complaints: 'প্রধান সমস্যা',
       history: 'পূর্বের ইতিহাস', examination: 'শারীরিক পরীক্ষা', diagnosis: 'রোগ নির্ণয়',
       investigations: 'পরীক্ষা-নিরীক্ষা', medicines: 'ওষুধ (Rx)', advice: 'পরামর্শ ও ফলোআপ',
-      interactions: 'ড্রাগ ইন্টারেকশন', save: 'সেভ করুন', print: 'প্রিন্ট', share: 'শেয়ার', template: 'টেমপ্লেট'
+      interactions: 'ড্রাগ ইন্টারেকশন', save: 'সেভ করুন', print: 'প্রিন্ট', share: 'শেয়ার', template: 'টেমপ্লেট', pdf: 'পিডিএফ'
     }
   };
 
@@ -35,8 +34,10 @@ export default function Sidebar({ activeTab, setActiveTab, language, onSave }) {
   ];
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 transition-colors duration-300">
+    // ✨ ADDED print:hidden
+    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 transition-colors duration-300 print:hidden">
       <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+        {/* Navigation Map remains exactly the same... */}
         <nav className="space-y-1 px-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -76,10 +77,8 @@ export default function Sidebar({ activeTab, setActiveTab, language, onSave }) {
       </div>
 
       <div className="p-4 border-t border-slate-100 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800 transition-colors duration-300">
-        
-        {/* ✨ Attached onClick={onSave} to the button */}
-        <button 
-          onClick={onSave} 
+        <button
+          onClick={onSave}
           className="w-full bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all shadow-sm"
         >
           <ICONS.Save size={18} />
@@ -87,15 +86,22 @@ export default function Sidebar({ activeTab, setActiveTab, language, onSave }) {
         </button>
 
         <div className="grid grid-cols-2 gap-2">
+          {/* ✨ Connected Print Handler */}
           <button
-            onClick={() => window.print()}
+            onClick={onPrint}
             className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
           >
             <ICONS.Print size={16} /> {t.print}
           </button>
-          <button className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors">
-            <FileText size={16} /> PDF
+
+          {/* ✨ Connected PDF Handler */}
+          <button
+            onClick={onExportPdf}
+            className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
+          >
+            <FileText size={16} /> {t.pdf}
           </button>
+
           <button className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors">
             <ICONS.Share size={16} /> {t.share}
           </button>

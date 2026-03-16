@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import UseAxiosSecure from '../../Hook/UseAxioSecure';
-import SectionTitle from '../../components/common/SectionTitle';
 import { AuthContext } from '../../providers/AuthProvider';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import {
@@ -71,7 +70,7 @@ const BranchDashboard = () => {
   if (!data) return <div className="p-10 text-center font-primary text-neutral/50">No data available.</div>;
 
   const {
-    kpis, todaysActivity, thisMonthActivity, statusBreakdown, charts, recentTables, weather, doctorProfile
+    kpis, todaysActivity, thisMonthActivity, charts, recentTables, weather, doctorProfile
   } = data;
 
   const formatDate = (dateString) => {

@@ -52,20 +52,20 @@ export default function CreatePrescription({ isOpen, onClose, onSuccess, prescri
     if (isOpen && prescription) {
       // If we are editing, populate the state with the existing data
       setPrescriptionData({
-        patient: { 
-          name: prescription.patient?.name || '', 
-          age: prescription.patient?.age || '', 
-          gender: prescription.patient?.gender || '', 
+        patient: {
+          name: prescription.patient?.name || '',
+          age: prescription.patient?.age || '',
+          gender: prescription.patient?.gender || '',
           phone: prescription.patient?.phone || '',
           patientId: prescription.patientId || ''
         },
-        vitals: { 
-          bp: prescription.vitals?.bp || '', 
-          weight: prescription.vitals?.weight || '', 
-          pulse: prescription.vitals?.pulse || '', 
-          temp: prescription.vitals?.temp || '', 
-          height: prescription.vitals?.height || '', 
-          spo2: prescription.vitals?.spo2 || '' 
+        vitals: {
+          bp: prescription.vitals?.bp || '',
+          weight: prescription.vitals?.weight || '',
+          pulse: prescription.vitals?.pulse || '',
+          temp: prescription.vitals?.temp || '',
+          height: prescription.vitals?.height || '',
+          spo2: prescription.vitals?.spo2 || ''
         },
         complaints: prescription.complaints || [],
         complaintsText: prescription.complaintsText || '',
@@ -100,17 +100,17 @@ export default function CreatePrescription({ isOpen, onClose, onSuccess, prescri
         ]);
 
         if (profileRes?.data && profileRes.data.length > 0) {
-          setDoctorProfile(profileRes.data[0]); 
+          setDoctorProfile(profileRes.data[0]);
         }
 
         if (chamberRes?.data && chamberRes.data.length > 0) {
           setChambers(chamberRes.data);
           // Auto-select chamber based on existing prescription
           if (prescription?.chamberId) {
-             const matchedChamber = chamberRes.data.find(c => c._id === prescription.chamberId);
-             setSelectedChamber(matchedChamber || chamberRes.data[0]);
+            const matchedChamber = chamberRes.data.find(c => c._id === prescription.chamberId);
+            setSelectedChamber(matchedChamber || chamberRes.data[0]);
           } else {
-             setSelectedChamber(chamberRes.data[0]); 
+            setSelectedChamber(chamberRes.data[0]);
           }
         }
       } catch (err) {
@@ -153,18 +153,18 @@ export default function CreatePrescription({ isOpen, onClose, onSuccess, prescri
         branch: branch,
         patientId: patientId || null,
         doctorId: finalDoctorId,
-        chamberId: selectedChamber?._id || null, 
-        status: 'Completed' 
+        chamberId: selectedChamber?._id || null,
+        status: 'Completed'
       };
 
       if (prescription?._id) {
-         // UPDATE EXISTING
-         await updatePrescription(prescription._id, payload);
-         toast.success("Prescription updated successfully!");
+        // UPDATE EXISTING
+        await updatePrescription(prescription._id, payload);
+        toast.success("Prescription updated successfully!");
       } else {
-         // CREATE NEW
-         await createPrescription(payload);
-         toast.success("Prescription saved successfully!");
+        // CREATE NEW
+        await createPrescription(payload);
+        toast.success("Prescription saved successfully!");
       }
 
       if (onSuccess) onSuccess();
@@ -192,9 +192,9 @@ export default function CreatePrescription({ isOpen, onClose, onSuccess, prescri
         </div>
 
         <div className="flex items-center gap-3">
-          
+
           {chambers.length > 0 && (
-            <select 
+            <select
               className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               value={selectedChamber?._id || ''}
               onChange={(e) => {
@@ -215,8 +215,8 @@ export default function CreatePrescription({ isOpen, onClose, onSuccess, prescri
             <button onClick={() => setLanguage('BN')} className={`px-3 py-1 text-xs font-bold rounded transition-all ${language === 'BN' ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-500 dark:text-gray-300 hover:text-slate-700 dark:hover:text-white'}`}>BN</button>
           </div>
 
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 rounded-full transition-all"
           >
             <ICONS.Close size={20} />
@@ -236,20 +236,20 @@ export default function CreatePrescription({ isOpen, onClose, onSuccess, prescri
         {isSaving && (
           <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-50 flex items-center justify-center backdrop-blur-sm">
             <span className="text-cyan-600 font-bold flex items-center gap-2">
-               <span className="loading loading-spinner loading-md"></span> 
-               {/* ✨ Dynamic Loading Text */}
-               {prescription ? 'Updating Prescription...' : 'Saving Prescription...'}
+              <span className="loading loading-spinner loading-md"></span>
+              {/* ✨ Dynamic Loading Text */}
+              {prescription ? 'Updating Prescription...' : 'Saving Prescription...'}
             </span>
           </div>
         )}
 
-        <PrescriptionPreview 
-          data={prescriptionData} 
-          language={language} 
+        <PrescriptionPreview
+          data={prescriptionData}
+          language={language}
           doctor={doctorProfile}
           chamber={selectedChamber}
         />
-        
+
         <RightPanel activeTab={activeTab} data={prescriptionData} updateData={updateData} language={language} />
       </div>
     </div>

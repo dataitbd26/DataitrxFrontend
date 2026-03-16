@@ -38,14 +38,14 @@ const SectionHeader = ({ icon: Icon, title }) => (
   </div>
 );
 
-// ✨ UPDATED: Extracted Component (Text Area Removed)
+// ✨ Extracted Component (Text Area Removed)
 const TextAndChipPanel = ({ activeTab, data, updateData, t, handleToggle }) => {
   const [customItem, setCustomItem] = useState('');
 
   const handleAddCustom = (e) => {
     e.preventDefault(); // Prevent form from refreshing the page
     const trimmed = customItem.trim();
-    
+
     if (trimmed) {
       const current = data[activeTab] || [];
       // Only add if it doesn't already exist
@@ -63,10 +63,8 @@ const TextAndChipPanel = ({ activeTab, data, updateData, t, handleToggle }) => {
 
   return (
     <div className="p-4 flex flex-col h-full">
-      {/* 🛑 TextArea was removed from here */}
-
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        
+
         {/* Removable Bullet Text Section */}
         {selectedChips.length > 0 && (
           <div className="mb-6">
@@ -75,15 +73,15 @@ const TextAndChipPanel = ({ activeTab, data, updateData, t, handleToggle }) => {
             </h3>
             <ul className="flex flex-col gap-2">
               {selectedChips.map((item, index) => (
-                <li 
-                  key={index} 
+                <li
+                  key={index}
                   className="flex items-start justify-between bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300 px-3 py-2 rounded-lg border border-cyan-100 dark:border-cyan-800/50 text-sm shadow-sm"
                 >
                   <span className="flex items-center gap-2 mt-0.5">
                     <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-cyan-500"></span>
                     <span className="leading-snug">{item}</span>
                   </span>
-                  
+
                   {/* Remove Button */}
                   <button
                     type="button"
@@ -172,22 +170,22 @@ export default function RightPanel({ activeTab, data, updateData, language }) {
     switch (activeTab) {
       case 'patient':
         return <PatientPanel data={data} updateData={updateData} t={t} />;
-      
+
       case 'vitals':
         return <VitalsPanel data={data} updateData={updateData} t={t} />;
-      
+
       case 'investigations':
         return <InvestigationsPanel data={data} updateData={updateData} t={t} handleToggle={handleToggle} />;
-      
+
       case 'medicines':
         return <MedicinesPanel data={data} updateData={updateData} t={t} />;
-      
+
       case 'advice':
         return <AdvicePanel data={data} updateData={updateData} t={t} handleToggle={handleToggle} />;
-      
+
       case 'interactions':
         return <InteractionsPanel data={data} t={t} />;
-      
+
       case 'complaints':
       case 'history':
       case 'examination':
@@ -195,7 +193,7 @@ export default function RightPanel({ activeTab, data, updateData, language }) {
         return (
           // ✨ Using the key={activeTab} trick completely resets the custom input state when you switch tabs!
           <TextAndChipPanel
-            key={activeTab} 
+            key={activeTab}
             activeTab={activeTab}
             data={data}
             updateData={updateData}
@@ -216,7 +214,8 @@ export default function RightPanel({ activeTab, data, updateData, language }) {
   };
 
   return (
-    <aside className="w-96 bg-white dark:bg-gray-800 border-l border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 shadow-xl shadow-slate-200/50 dark:shadow-none z-10 transition-colors duration-300">
+    // ✨ ADDED print:hidden to the className string below!
+    <aside className="w-96 bg-white dark:bg-gray-800 border-l border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 shadow-xl shadow-slate-200/50 dark:shadow-none z-10 transition-colors duration-300 print:hidden">
       <SectionHeader
         icon={getIcon()}
         title={dict[language][activeTab] || activeTab.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
