@@ -16,6 +16,15 @@ import SectionTitle from '../../components/common/SectionTitle';
 import { AuthContext } from '../../providers/AuthProvider';
 
 const Appointments = () => {
+    // Helper to get today's date in YYYY-MM-DD format for the date input
+    const getTodayDateString = () => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    };
+
     // Pagination & Config State
     const [limit, setLimit] = useState(10);
     const [page, setPage] = useState(1);
@@ -28,8 +37,11 @@ const Appointments = () => {
 
     // Filter State
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedDate, setSelectedDate] = useState("");
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+    const [selectedDate, setSelectedDate] = useState(getTodayDateString()); // Defaults to today
     const [selectedChamberFilter, setSelectedChamberFilter] = useState(authChamber?._id || authChamber || "");
+    const [selectedStatus, setSelectedStatus] = useState("");
+    const [selectedGender, setSelectedGender] = useState("");
 
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,6 +57,20 @@ const Appointments = () => {
     const { getAppointmentsByBranch, removeAppointment, loading: appointmentsLoading } = useAppointment();
     const { getChambersByBranch } = useChamber();
 
+    // Setup Search Debounce (waits 500ms after user stops typing)
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+            setPage(1); // Reset to page 1 on new search
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    // Reset to page 1 when other filters change
+    useEffect(() => {
+        setPage(1);
+    }, [selectedDate, selectedChamberFilter, selectedStatus, selectedGender]);
+
     const fetchDropdownData = useCallback(async () => {
         if (!branch) return;
         try {
@@ -58,9 +84,14 @@ const Appointments = () => {
     const fetchAppointmentsData = useCallback(async () => {
         if (!branch) return;
         try {
-            const params = { page, limit, search: searchQuery };
+            const params = { page, limit };
+            
+            // Attach active filters
+            if (debouncedSearchQuery) params.search = debouncedSearchQuery;
             if (selectedDate) params.date = selectedDate;
             if (selectedChamberFilter) params.chamberId = selectedChamberFilter;
+            if (selectedStatus) params.status = selectedStatus;
+            if (selectedGender) params.gender = selectedGender;
 
             const response = await getAppointmentsByBranch(branch, params);
 
@@ -75,7 +106,7 @@ const Appointments = () => {
         } catch (err) {
             console.error("Failed to fetch appointments:", err);
         }
-    }, [page, limit, branch, searchQuery, selectedDate, selectedChamberFilter, getAppointmentsByBranch]);
+    }, [page, limit, branch, debouncedSearchQuery, selectedDate, selectedChamberFilter, selectedStatus, selectedGender, getAppointmentsByBranch]);
 
     useEffect(() => {
         fetchDropdownData();
@@ -144,16 +175,26 @@ const Appointments = () => {
 
             {/* Filters Section */}
             <div className="flex flex-wrap gap-4 mb-4">
-                <select className="select select-bordered select-sm w-full md:w-auto bg-transparent">
-                    <option>All Pre-Checkup Status</option>
-                    <option>Pending</option>
-                    <option>Completed</option>
+                <select 
+                    className="select select-bordered select-sm w-full md:w-auto bg-transparent"
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                    <option value="">All Pre-Checkup Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
                 </select>
-                <select className="select select-bordered select-sm w-full md:w-auto bg-transparent">
-                    <option>All Genders</option>
-                    <option>Male</option>
-                    <option>Female</option>
+                
+                <select 
+                    className="select select-bordered select-sm w-full md:w-auto bg-transparent"
+                    value={selectedGender}
+                    onChange={(e) => setSelectedGender(e.target.value)}
+                >
+                    <option value="">All Genders</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
                 </select>
+
                 <select
                     className="select select-bordered select-sm w-full md:w-auto bg-transparent"
                     value={selectedChamberFilter}
@@ -162,12 +203,14 @@ const Appointments = () => {
                     <option value="">All Chambers</option>
                     {chambers.map(ch => <option key={ch._id} value={ch._id}>{ch.chamberName}</option>)}
                 </select>
+                
                 <div className="flex-1 min-w-[200px] flex gap-2">
                     <input
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
                         className="input input-bordered input-sm w-full max-w-xs bg-transparent"
+                        title="Clear date to see all times" // Helpful tooltip
                     />
                 </div>
             </div>
@@ -175,7 +218,7 @@ const Appointments = () => {
             <div className="flex justify-between items-center mb-4">
                 <input
                     type="text"
-                    placeholder="Search patient info..."
+                    placeholder="Search patient name or phone..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="input input-bordered input-sm w-full max-w-xs bg-transparent"
@@ -212,7 +255,7 @@ const Appointments = () => {
                             ) : appointments.length === 0 ? (
                                 <tr>
                                     <td colSpan="12" className="text-center py-10 text-gray-500">
-                                        No appointments found.
+                                        No appointments found matching your filters.
                                     </td>
                                 </tr>
                             ) : (
