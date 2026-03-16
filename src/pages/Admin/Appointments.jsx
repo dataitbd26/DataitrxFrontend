@@ -53,8 +53,8 @@ const Appointments = () => {
     // Time Block Modal State
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
-    // Hooks
-    const { getAppointmentsByBranch, removeAppointment, loading: appointmentsLoading } = useAppointment();
+    // Hooks - Added updateAppointment here
+    const { getAppointmentsByBranch, removeAppointment, updateAppointment, loading: appointmentsLoading } = useAppointment();
     const { getChambersByBranch } = useChamber();
 
     // Setup Search Debounce (waits 500ms after user stops typing)
@@ -134,6 +134,16 @@ const Appointments = () => {
             alert(`Error deleting: ${err}`);
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    // New handleCollectPayment function
+    const handleCollectPayment = async (appointmentId) => {
+        try {
+            await updateAppointment(appointmentId, { paymentStatus: "Collect" });
+            fetchAppointmentsData(); // Refresh the table to show updated status
+        } catch (err) {
+            alert(`Error updating payment status: ${err}`);
         }
     };
 
@@ -284,12 +294,30 @@ const Appointments = () => {
                                             </span>
                                         </td>
                                         <td className="text-green-600 font-medium text-sm">৳{appt.chamberId?.consultancyFee || '0'}</td>
+                                        
+                                        {/* Updated Payment Status cell */}
                                         <td>
                                             <div className="flex items-center gap-2">
-                                                <span className="bg-casual-black text-white text-[10px] px-2 py-1 rounded uppercase tracking-wider">Unpaid</span>
-                                                <button className="btn btn-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-transparent">Collect</button>
+                                                {appt.paymentStatus === "Collect" ? (
+                                                    <span className="bg-green-600 text-white text-[10px] px-2 py-1 rounded uppercase tracking-wider">
+                                                        Collected
+                                                    </span>
+                                                ) : (
+                                                    <>
+                                                        <span className="bg-casual-black text-white text-[10px] px-2 py-1 rounded uppercase tracking-wider">
+                                                            Unpaid
+                                                        </span>
+                                                        <button 
+                                                            onClick={() => handleCollectPayment(appt._id)}
+                                                            className="btn btn-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                        >
+                                                            Collect
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
+
                                         <td className="text-xs text-gray-500">
                                             {new Date(appt.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}
                                         </td>
