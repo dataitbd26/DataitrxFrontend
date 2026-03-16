@@ -95,8 +95,14 @@ export default function InvestigationsPanel({ data, updateData, t, handleToggle 
     }
   };
 
+  // --- NEW: Remove Investigation Handler ---
+  const handleRemoveInvestigation = (indexToRemove) => {
+    const updatedInvestigations = data.investigations.filter((_, index) => index !== indexToRemove);
+    updateData('investigations', updatedInvestigations);
+  };
+
   return (
-    <div className="p-4 flex flex-col h-full relative">
+    <div className="p-4 flex flex-col h-full relative overflow-y-auto custom-scrollbar">
       <div className="mb-4 flex items-center gap-2" ref={dropdownRef}>
         <div className="relative flex-1">
           <input
@@ -138,15 +144,50 @@ export default function InvestigationsPanel({ data, updateData, t, handleToggle 
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="mb-6">
         <h3 className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-          {t.quickPick}
+          {t.quickPick || "Quick Pick"}
         </h3>
         <ChipGroup
           items={CHIPS_DATA.investigations || []}
-          selected={data.investigations}
+          selected={data.investigations || []}
           onToggle={(item) => handleToggle('investigations', item)}
         />
+      </div>
+
+      {/* --- NEW: Added Investigations List (Similar to Medicines Page) --- */}
+      <div className="mt-auto pt-4 border-t border-slate-200 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
+            {t.addedInvestigations || "Added Investigations"}
+          </h3>
+          <span className="text-xs text-slate-400 dark:text-gray-500 bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+            {(data.investigations || []).length}
+          </span>
+        </div>
+
+        {!(data.investigations && data.investigations.length > 0) ? (
+          <div className="flex flex-col items-center justify-center py-8 text-slate-300 dark:text-gray-600 bg-slate-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-slate-200 dark:border-gray-700">
+            <ICONS.Search size={32} className="mb-2 opacity-50" /> {/* Replace with a lab icon if you have one */}
+            <p className="text-xs">{t.noInvestigations || "No investigations added yet"}</p>
+          </div>
+        ) : (
+          <div className="space-y-2 mb-2">
+            {data.investigations.map((test, idx) => (
+              <div key={idx} className="flex justify-between items-center p-3 bg-white dark:bg-gray-700 border border-slate-100 dark:border-gray-600 rounded-lg shadow-sm transition-colors">
+                <span className="font-bold text-slate-800 dark:text-gray-100 text-sm">
+                  {test}
+                </span>
+                <button
+                  onClick={() => handleRemoveInvestigation(idx)}
+                  className="text-red-600 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-all p-2"
+                >
+                  <ICONS.Delete size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
