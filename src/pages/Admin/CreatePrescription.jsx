@@ -179,13 +179,18 @@ export default function CreatePrescription() {
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* ✨ Passed handlePrint and handleExportPdf to Sidebar */}
-        <Sidebar
+      <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           language={language}
           onSave={handleSave}
           onPrint={handlePrint}
           onExportPdf={handleExportPdf}
+          
+         
+          prescriptionData={prescriptionData}
+          doctorProfile={doctorProfile}
+          selectedChamber={selectedChamber}
         />
 
         {isSaving && (
