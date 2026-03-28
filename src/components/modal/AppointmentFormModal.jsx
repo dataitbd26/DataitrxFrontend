@@ -1,18 +1,36 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { HiXMark, HiMagnifyingGlass } from 'react-icons/hi2';
+import { HiXMark, HiMagnifyingGlass, HiExclamationTriangle, HiInformationCircle } from 'react-icons/hi2';
 import useAppointment from '../../Hook/useAppointment';
 import useChamber from '../../Hook/useChamber';
 import usePatient from '../../Hook/usePatient';
 import { AuthContext } from '../../providers/AuthProvider';
 
+// Helper function to add minutes to a HH:mm time string
+const addMinutesToTime = (timeStr, minsToAdd) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    date.setMinutes(date.getMinutes() + minsToAdd);
+    const newHours = String(date.getHours()).padStart(2, '0');
+    const newMins = String(date.getMinutes()).padStart(2, '0');
+    return `${newHours}:${newMins}`;
+};
+
 const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, currentBranch }) => {
     const { chamber: authChamber } = useContext(AuthContext);
 
-    const { createAppointment, updateAppointment, loading } = useAppointment();
+    const { createAppointment, updateAppointment, getAppointmentsByBranch, loading } = useAppointment();
     const { getChambersByBranch } = useChamber();
     const { getPatientsByBranch } = usePatient();
 
     const [chambers, setChambers] = useState([]);
+
+    // Advanced/Capacity States
+    const [selectedChamberDetails, setSelectedChamberDetails] = useState(null);
+    const [bookedCount, setBookedCount] = useState(0);
+    const [checkingAvailability, setCheckingAvailability] = useState(false);
+    const [isHoliday, setIsHoliday] = useState(false);
 
     // Helper to get today's date in YYYY-MM-DD format
     const getTodayDate = () => new Date().toISOString().split('T')[0];
@@ -34,7 +52,7 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
         bloodGroup: '',
         address: '',
         chamberId: '',
-        appointmentDate: getTodayDate(), // Default to today's date
+        appointmentDate: getTodayDate(),
         appointmentTime: '',
         patientType: 'New Patient',
     });
@@ -78,6 +96,68 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             console.error("Error fetching chambers", error);
         }
     };
+
+    // Auto-Time Mapping (+10 mins) & Capacity Checking
+    useEffect(() => {
+        const updateTimeAndCheckAvailability = async () => {
+            if (!formData.chamberId || !formData.appointmentDate || !chambers.length) return;
+
+            const chamber = chambers.find(c => c._id === formData.chamberId);
+            setSelectedChamberDetails(chamber);
+
+            const dateObj = new Date(formData.appointmentDate);
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const dayName = days[dateObj.getDay()];
+            const todaySchedule = chamber?.schedule?.find(s => s.day === dayName);
+
+            if (todaySchedule?.isHoliday) {
+                setIsHoliday(true);
+                if (!appointment) setFormData(prev => ({ ...prev, appointmentTime: '' }));
+                return;
+            }
+
+            setIsHoliday(false);
+            setCheckingAvailability(true);
+
+            try {
+                // Fetch existing appointments for this date to determine the latest time
+                const res = await getAppointmentsByBranch(currentBranch, {
+                    chamberId: formData.chamberId,
+                    date: formData.appointmentDate,
+                    limit: 100 // Fetch enough to find the latest
+                });
+
+                const existingAppts = res?.data || [];
+                setBookedCount(res?.pagination?.totalItems || existingAppts.length);
+
+                if (!appointment) {
+                    let nextTime = todaySchedule?.startTime || "09:00";
+
+                    if (existingAppts.length > 0) {
+                        // Extract times, sort them to find the latest
+                        const times = existingAppts
+                            .map(a => a.appointmentTime)
+                            .filter(Boolean)
+                            .sort();
+
+                        if (times.length > 0) {
+                            const latestTime = times[times.length - 1];
+                            nextTime = addMinutesToTime(latestTime, 10); // Add 10 mins to the last booked appt
+                        }
+                    }
+                    setFormData(prev => ({ ...prev, appointmentTime: nextTime }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch availability", error);
+            } finally {
+                setCheckingAvailability(false);
+            }
+        };
+
+        if (isOpen) {
+            updateTimeAndCheckAvailability();
+        }
+    }, [formData.chamberId, formData.appointmentDate, chambers, currentBranch, appointment, isOpen]);
 
     const resetForm = () => {
         setFormData({
@@ -153,7 +233,7 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const payload = {
+        const basePayload = {
             chamberId: formData.chamberId,
             appointmentDate: formData.appointmentDate,
             appointmentTime: formData.appointmentTime,
@@ -161,26 +241,42 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             branch: currentBranch
         };
 
-        if (formData.patientId && !appointment) {
-            payload.patientId = formData.patientId;
-        } else {
-            payload.patientDetails = {
-                fullName: formData.fullName,
-                email: formData.email,
-                phone: formData.phone,
-                dateOfBirth: formData.dateOfBirth || undefined,
-                age: formData.age || undefined,
-                gender: formData.gender,
-                bloodGroup: formData.bloodGroup || undefined,
-                address: formData.address,
-            };
-            if (appointment) payload.patientId = formData.patientId;
-        }
-
         try {
             if (appointment) {
+                // UPDATE SINGLE APPOINTMENT
+                const payload = { ...basePayload };
+                if (formData.patientId) {
+                    payload.patientId = formData.patientId;
+                } else {
+                    payload.patientDetails = {
+                        fullName: formData.fullName,
+                        email: formData.email,
+                        phone: formData.phone,
+                        dateOfBirth: formData.dateOfBirth || undefined,
+                        age: formData.age || undefined,
+                        gender: formData.gender,
+                        bloodGroup: formData.bloodGroup || undefined,
+                        address: formData.address,
+                    };
+                }
                 await updateAppointment(appointment._id, payload);
             } else {
+                // CREATE APPOINTMENT
+                const payload = { ...basePayload };
+                if (formData.patientId) {
+                    payload.patientId = formData.patientId;
+                } else {
+                    payload.patientDetails = {
+                        fullName: formData.fullName,
+                        email: formData.email,
+                        phone: formData.phone,
+                        dateOfBirth: formData.dateOfBirth || undefined,
+                        age: formData.age || undefined,
+                        gender: formData.gender,
+                        bloodGroup: formData.bloodGroup || undefined,
+                        address: formData.address,
+                    };
+                }
                 await createAppointment(payload);
             }
             onSuccess();
@@ -193,19 +289,52 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
 
     if (!isOpen) return null;
 
+    // Derived Capacity Variables
+    const maxAllowed = selectedChamberDetails?.maxDailyPatient || 0;
+    const isUnlimited = maxAllowed === 0;
+    const availableSlots = isUnlimited ? Infinity : Math.max(0, maxAllowed - bookedCount);
+    const isFull = !isUnlimited && availableSlots < 1;
+
+    // Prevent Save conditions
+    const isSubmitDisabled = loading || isFull || isHoliday || checkingAvailability;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-casual-black/50 backdrop-blur-sm p-4">
             <div className="bg-base-100 dark:bg-[#1a1a1a] w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+
+                {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-casual-black/10 dark:border-white/10">
                     <h2 className="text-2xl font-bold font-secondary text-casual-black dark:text-concrete">
                         {appointment ? 'Edit Appointment' : 'Create Appointment'}
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-casual-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
+                    <button onClick={onClose} className="p-2 hover:bg-casual-black/5 dark:hover:bg-white/5 rounded-full transition-colors self-start">
                         <HiXMark className="w-6 h-6 text-casual-black/60 dark:text-concrete/60" />
                     </button>
                 </div>
 
                 <div className="p-6 overflow-y-auto flex-1">
+
+                    {/* Status/Warning Banners */}
+                    {isHoliday && (
+                        <div className="alert alert-warning shadow-sm py-2 mb-4 bg-yellow-50 text-yellow-800 border-yellow-200">
+                            <HiExclamationTriangle className="w-5 h-5" />
+                            <span>The selected chamber is closed on this date (Holiday).</span>
+                        </div>
+                    )}
+                    {isFull && (
+                        <div className="alert alert-error shadow-sm py-2 mb-4 bg-red-50 text-red-800 border-red-200">
+                            <HiExclamationTriangle className="w-5 h-5" />
+                            <span>Chamber capacity reached for this date. Cannot book more.</span>
+                        </div>
+                    )}
+                    {!isFull && !isUnlimited && !isHoliday && maxAllowed > 0 && (
+                        <div className="alert alert-info shadow-sm py-2 mb-4 bg-blue-50 text-blue-800 border-blue-200">
+                            <HiInformationCircle className="w-5 h-5" />
+                            <span>Available Capacity: {availableSlots} slots remaining (Booked {bookedCount}/{maxAllowed}).</span>
+                        </div>
+                    )}
+
+                    {/* Patient Search */}
                     {!appointment && (
                         <div className="mb-8 relative z-20">
                             <div className="relative">
@@ -243,20 +372,18 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                                     ))}
                                 </ul>
                             )}
-                            {showDropdown && searchResults.length === 0 && !isSearching && (
-                                <div className="absolute w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg px-4 py-3 text-sm text-gray-500 z-30">
-                                    No patients found. Fill the form below to create a new one.
-                                </div>
-                            )}
                         </div>
                     )}
 
                     <form id="appointment-form" onSubmit={handleSubmit} className="space-y-8">
+
+                        {/* PATIENT INFO SECTION */}
                         <section>
                             <h3 className="text-lg font-bold font-secondary text-[#008080] border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                                 Patient Information
                                 {formData.patientId && <span className="ml-3 badge badge-sm bg-blue-100 text-blue-800 border-none">Existing Patient Linked</span>}
                             </h3>
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                 <div className="form-control">
                                     <label className="label"><span className="label-text font-medium">Full Name*</span></label>
@@ -287,7 +414,6 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                                         <option value="Other">Other</option>
                                     </select>
                                 </div>
-
                                 <div className="form-control">
                                     <label className="label"><span className="label-text font-medium">Blood Group</span></label>
                                     <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="select select-bordered w-full bg-transparent">
@@ -304,12 +430,13 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                             </div>
                         </section>
 
+                        {/* CHAMBER & TIME SECTION */}
                         <section>
                             <h3 className="text-lg font-bold font-secondary text-[#008080] border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                                 Appointment Configuration
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                                <div className="form-control lg:col-span-1">
+                                <div className="form-control">
                                     <label className="label"><span className="label-text font-medium">Chamber*</span></label>
                                     <select name="chamberId" value={formData.chamberId} onChange={handleChange} required className="select select-bordered w-full bg-transparent">
                                         <option value="" disabled>Select Chamber</option>
@@ -318,15 +445,17 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                                         ))}
                                     </select>
                                 </div>
-                                <div className="form-control lg:col-span-1">
+                                <div className="form-control">
                                     <label className="label"><span className="label-text font-medium">Appointment Date*</span></label>
                                     <input type="date" name="appointmentDate" value={formData.appointmentDate} onChange={handleChange} required className="input input-bordered w-full bg-transparent" />
                                 </div>
-                                <div className="form-control lg:col-span-1">
-                                    <label className="label"><span className="label-text font-medium">Appointment Time*</span></label>
+                                <div className="form-control relative">
+                                    <label className="label">
+                                        <span className="label-text font-medium">Time* (Auto-set +10m)</span>
+                                    </label>
                                     <input type="time" name="appointmentTime" value={formData.appointmentTime} onChange={handleChange} required className="input input-bordered w-full bg-transparent" />
                                 </div>
-                                <div className="form-control lg:col-span-1">
+                                <div className="form-control">
                                     <label className="label"><span className="label-text font-medium">Patient Type*</span></label>
                                     <select name="patientType" value={formData.patientType} onChange={handleChange} required className="select select-bordered w-full bg-transparent">
                                         <option value="New Patient">New Patient</option>
@@ -339,12 +468,22 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                     </form>
                 </div>
 
+                {/* Footer */}
                 <div className="p-5 border-t border-casual-black/10 dark:border-white/10 bg-casual-black/5 dark:bg-white/5 flex justify-end gap-3 z-10">
                     <button type="button" onClick={onClose} className="btn btn-ghost border border-gray-300 dark:border-gray-600">
                         Cancel
                     </button>
-                    <button type="submit" form="appointment-form" disabled={loading} className="btn bg-[#008080] hover:bg-[#006666] text-white border-none px-8">
-                        {loading ? <span className="loading loading-spinner"></span> : 'Save Appointment'}
+                    <button
+                        type="submit"
+                        form="appointment-form"
+                        disabled={isSubmitDisabled}
+                        className="btn bg-[#008080] hover:bg-[#006666] text-white border-none px-8 disabled:bg-gray-400 disabled:text-gray-200"
+                    >
+                        {loading || checkingAvailability ? (
+                            <span className="loading loading-spinner"></span>
+                        ) : (
+                            appointment ? 'Save Changes' : 'Create Appointment'
+                        )}
                     </button>
                 </div>
             </div>

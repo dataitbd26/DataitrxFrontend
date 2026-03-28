@@ -13,7 +13,9 @@ import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import Pagination from '../../components/common/Pagination';
 import AppointmentBlockModal from '../../components/modal/AppointmentBlockModal';
 import SectionTitle from '../../components/common/SectionTitle';
+import AppointmentViewModal from '../../components/modal/AppointmentViewModal';
 import { AuthContext } from '../../providers/AuthProvider';
+import Swal from 'sweetalert2';
 
 const Appointments = () => {
     // Helper to get today's date in YYYY-MM-DD format for the date input
@@ -42,6 +44,9 @@ const Appointments = () => {
     const [selectedChamberFilter, setSelectedChamberFilter] = useState(authChamber?._id || authChamber || "");
     const [selectedStatus, setSelectedStatus] = useState("");
     const [selectedGender, setSelectedGender] = useState("");
+    const [selectedPatientType, setSelectedPatientType] = useState("");
+    const [selectedIsPrescription, setSelectedIsPrescription] = useState("");
+    const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("");
 
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,12 +54,14 @@ const Appointments = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [appointmentToDelete, setAppointmentToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [viewAppointmentId, setViewAppointmentId] = useState(null);
 
     // Time Block Modal State
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
     // Hooks
-    const { getAppointmentsByBranch, removeAppointment, loading: appointmentsLoading } = useAppointment();
+    const { getAppointmentsByBranch, removeAppointment, updateAppointment, loading: appointmentsLoading } = useAppointment();
     const { getChambersByBranch } = useChamber();
 
     // Setup Search Debounce (waits 500ms after user stops typing)
@@ -69,7 +76,7 @@ const Appointments = () => {
     // Reset to page 1 when other filters change
     useEffect(() => {
         setPage(1);
-    }, [selectedDate, selectedChamberFilter, selectedStatus, selectedGender]);
+    }, [selectedDate, selectedChamberFilter, selectedStatus, selectedGender, selectedPatientType, selectedIsPrescription, selectedPaymentStatus]);
 
     const fetchDropdownData = useCallback(async () => {
         if (!branch) return;
@@ -85,13 +92,16 @@ const Appointments = () => {
         if (!branch) return;
         try {
             const params = { page, limit };
-            
+
             // Attach active filters
             if (debouncedSearchQuery) params.search = debouncedSearchQuery;
             if (selectedDate) params.date = selectedDate;
             if (selectedChamberFilter) params.chamberId = selectedChamberFilter;
             if (selectedStatus) params.status = selectedStatus;
             if (selectedGender) params.gender = selectedGender;
+            if (selectedPatientType) params.patientType = selectedPatientType;
+            if (selectedIsPrescription) params.isPrescription = selectedIsPrescription;
+            if (selectedPaymentStatus) params.paymentStatus = selectedPaymentStatus;
 
             const response = await getAppointmentsByBranch(branch, params);
 
@@ -106,7 +116,7 @@ const Appointments = () => {
         } catch (err) {
             console.error("Failed to fetch appointments:", err);
         }
-    }, [page, limit, branch, debouncedSearchQuery, selectedDate, selectedChamberFilter, selectedStatus, selectedGender, getAppointmentsByBranch]);
+    }, [page, limit, branch, debouncedSearchQuery, selectedDate, selectedChamberFilter, selectedStatus, selectedGender, selectedPatientType, selectedIsPrescription, selectedPaymentStatus, getAppointmentsByBranch]);
 
     useEffect(() => {
         fetchDropdownData();
@@ -121,6 +131,44 @@ const Appointments = () => {
     const handleAddClick = () => { setSelectedAppointment(null); setIsModalOpen(true); };
     const handleEditClick = (appointment) => { setSelectedAppointment(appointment); setIsModalOpen(true); };
     const handleDeleteClick = (appointment) => { setAppointmentToDelete(appointment); setIsDeleteModalOpen(true); };
+    const handleViewClick = (appointment) => { setViewAppointmentId(appointment._id); setIsViewModalOpen(true); };
+
+    const handleUpdatePayment = async (id, status) => {
+        Swal.fire({
+            title: 'Confirm Payment',
+            text: "Are you sure you want to mark this appointment as Collected?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981', // green / accent
+            cancelButtonColor: '#ef4444', // red
+            confirmButtonText: 'Yes, collect it!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await updateAppointment(id, { paymentStatus: status });
+                    fetchAppointmentsData();
+                    Swal.fire({
+                        title: 'Collected!',
+                        text: 'Payment has been successfully recorded.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } catch (err) {
+                    Swal.fire('Error!', `Error updating payment: ${err}`, 'error');
+                }
+            }
+        });
+    };
+
+    const handleUpdatePrescription = async (id, status) => {
+        try {
+            await updateAppointment(id, { isPrescription: status });
+            fetchAppointmentsData();
+        } catch (err) {
+            alert(`Error updating prescription: ${err}`);
+        }
+    };
 
     const confirmDelete = async () => {
         if (!appointmentToDelete) return;
@@ -173,9 +221,8 @@ const Appointments = () => {
                 </button>
             </div>
 
-            {/* Filters Section */}
             <div className="flex flex-wrap gap-4 mb-4">
-                <select 
+                <select
                     className="select select-bordered select-sm w-full md:w-auto bg-transparent"
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
@@ -184,8 +231,39 @@ const Appointments = () => {
                     <option value="Pending">Pending</option>
                     <option value="Completed">Completed</option>
                 </select>
-                
-                <select 
+
+                <select
+                    className="select select-bordered select-sm w-full md:w-auto bg-transparent"
+                    value={selectedPatientType}
+                    onChange={(e) => setSelectedPatientType(e.target.value)}
+                >
+                    <option value="">All Patient Types</option>
+                    <option value="New Patient">New Patient</option>
+                    <option value="Old Patient">Old Patient</option>
+                    <option value="Report">Report</option>
+                </select>
+
+                <select
+                    className="select select-bordered select-sm w-full md:w-auto bg-transparent"
+                    value={selectedIsPrescription}
+                    onChange={(e) => setSelectedIsPrescription(e.target.value)}
+                >
+                    <option value="">All Prescription</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+
+                <select
+                    className="select select-bordered select-sm w-full md:w-auto bg-transparent"
+                    value={selectedPaymentStatus}
+                    onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                >
+                    <option value="">All Payments</option>
+                    <option value="Unpaid">Unpaid</option>
+                    <option value="Collect">Collected</option>
+                </select>
+
+                <select
                     className="select select-bordered select-sm w-full md:w-auto bg-transparent"
                     value={selectedGender}
                     onChange={(e) => setSelectedGender(e.target.value)}
@@ -203,7 +281,7 @@ const Appointments = () => {
                     <option value="">All Chambers</option>
                     {chambers.map(ch => <option key={ch._id} value={ch._id}>{ch.chamberName}</option>)}
                 </select>
-                
+
                 <div className="flex-1 min-w-[200px] flex gap-2">
                     <input
                         type="date"
@@ -239,6 +317,7 @@ const Appointments = () => {
                                 <th>Chamber</th>
                                 <th>Appointment Date</th>
                                 <th>Pre-Checkup</th>
+                                <th>Prescription</th>
                                 <th>Consultancy Fee</th>
                                 <th>Payment Status</th>
                                 <th>Created At</th>
@@ -283,11 +362,27 @@ const Appointments = () => {
                                                 {appt.preCheckupId ? 'Completed' : 'Pending'}
                                             </span>
                                         </td>
+                                        <td>
+                                            <div className="flex items-center gap-2 whitespace-nowrap">
+                                                <span className={`text-[10px] px-2 py-1 rounded uppercase tracking-wider text-white ${appt.isPrescription === 'Yes' ? 'bg-green-600' : 'bg-casual-black'}`}>
+                                                    {appt.isPrescription === 'Yes' ? 'Done' : 'No'}
+                                                </span>
+                                            </div>
+                                        </td>
                                         <td className="text-green-600 font-medium text-sm">৳{appt.chamberId?.consultancyFee || '0'}</td>
                                         <td>
-                                            <div className="flex items-center gap-2">
-                                                <span className="bg-casual-black text-white text-[10px] px-2 py-1 rounded uppercase tracking-wider">Unpaid</span>
-                                                <button className="btn btn-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-transparent">Collect</button>
+                                            <div className="flex items-center gap-2 whitespace-nowrap">
+                                                <span className={`text-[10px] px-2 py-1 rounded uppercase tracking-wider text-white ${appt.paymentStatus === 'Collect' ? 'bg-green-600' : 'bg-casual-black'}`}>
+                                                    {appt.paymentStatus === 'Collect' ? 'Collected' : 'Unpaid'}
+                                                </span>
+                                                {appt.paymentStatus !== 'Collect' && (
+                                                    <button 
+                                                        onClick={() => handleUpdatePayment(appt._id, 'Collect')}
+                                                        className="btn btn-xs btn-outline border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                    >
+                                                        Collect
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="text-xs text-gray-500">
@@ -295,7 +390,7 @@ const Appointments = () => {
                                         </td>
                                         <td>
                                             <div className="flex gap-1">
-                                                <button className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800">
+                                                <button onClick={() => handleViewClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800">
                                                     <HiEye className="text-gray-600 dark:text-gray-300" />
                                                 </button>
                                                 <button onClick={() => handleEditClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800">
@@ -362,6 +457,12 @@ const Appointments = () => {
                 onConfirm={confirmDelete}
                 itemName={`Appointment ${appointmentToDelete?.appointmentId || ''}`}
                 isDeleting={isDeleting}
+            />
+
+            <AppointmentViewModal
+                isOpen={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
+                appointmentId={viewAppointmentId}
             />
         </div>
     );
