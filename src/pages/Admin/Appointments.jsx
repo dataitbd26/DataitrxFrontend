@@ -60,7 +60,7 @@ const Appointments = () => {
     // Time Block Modal State
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
-    // Hooks
+    // Hooks - Added updateAppointment here
     const { getAppointmentsByBranch, removeAppointment, updateAppointment, loading: appointmentsLoading } = useAppointment();
     const { getChambersByBranch } = useChamber();
 
@@ -182,6 +182,16 @@ const Appointments = () => {
             alert(`Error deleting: ${err}`);
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    // New handleCollectPayment function
+    const handleCollectPayment = async (appointmentId) => {
+        try {
+            await updateAppointment(appointmentId, { paymentStatus: "Collect" });
+            fetchAppointmentsData(); // Refresh the table to show updated status
+        } catch (err) {
+            alert(`Error updating payment status: ${err}`);
         }
     };
 
@@ -370,13 +380,15 @@ const Appointments = () => {
                                             </div>
                                         </td>
                                         <td className="text-green-600 font-medium text-sm">৳{appt.chamberId?.consultancyFee || '0'}</td>
+
+                                        {/* Updated Payment Status cell */}
                                         <td>
                                             <div className="flex items-center gap-2 whitespace-nowrap">
                                                 <span className={`text-[10px] px-2 py-1 rounded uppercase tracking-wider text-white ${appt.paymentStatus === 'Collect' ? 'bg-green-600' : 'bg-casual-black'}`}>
                                                     {appt.paymentStatus === 'Collect' ? 'Collected' : 'Unpaid'}
                                                 </span>
                                                 {appt.paymentStatus !== 'Collect' && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleUpdatePayment(appt._id, 'Collect')}
                                                         className="btn btn-xs btn-outline border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
                                                     >
@@ -385,6 +397,7 @@ const Appointments = () => {
                                                 )}
                                             </div>
                                         </td>
+
                                         <td className="text-xs text-gray-500">
                                             {new Date(appt.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}
                                         </td>

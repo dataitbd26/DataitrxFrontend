@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { HiXMark, HiMagnifyingGlass, HiExclamationTriangle, HiInformationCircle } from 'react-icons/hi2';
+import { HiXMark, HiMagnifyingGlass, HiExclamationTriangle, HiInformationCircle, HiCalendarDays } from 'react-icons/hi2';
 import useAppointment from '../../Hook/useAppointment';
 import useChamber from '../../Hook/useChamber';
 import usePatient from '../../Hook/usePatient';
@@ -35,6 +35,18 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
     // Helper to get today's date in YYYY-MM-DD format
     const getTodayDate = () => new Date().toISOString().split('T')[0];
 
+    // Helper to format an incoming date to DD/MM/YYYY
+    const formatToDDMMYYYY = (dateString) => {
+        if (!dateString) return '';
+        try {
+            const isoDate = new Date(dateString).toISOString().split('T')[0];
+            const [yyyy, mm, dd] = isoDate.split('-');
+            return `${dd}/${mm}/${yyyy}`;
+        } catch (e) {
+            return '';
+        }
+    };
+
     // Patient Search State
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -67,7 +79,7 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                 phone: appointment.patientId?.phone || '',
                 fullName: appointment.patientId?.fullName || '',
                 email: appointment.patientId?.email || '',
-                dateOfBirth: appointment.patientId?.dateOfBirth ? new Date(appointment.patientId.dateOfBirth).toISOString().split('T')[0] : '',
+                dateOfBirth: formatToDDMMYYYY(appointment.patientId?.dateOfBirth),
                 age: appointment.patientId?.age || '',
                 gender: appointment.patientId?.gender || 'Male',
                 bloodGroup: appointment.patientId?.bloodGroup || '',
@@ -187,6 +199,57 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
         if ((name === 'phone' || name === 'fullName') && formData.patientId) {
             setFormData(prev => ({ ...prev, patientId: null, patientType: 'New Patient' }));
         }
+
+        // Automatic Dynamic Search when 10th digit of phone is inputted
+        if (name === 'phone' && !appointment) {
+            const digitCount = value.replace(/\D/g, '').length;
+            if (digitCount === 10) {
+                setSearchQuery(value); // Mirrors search to top bar
+                setIsSearching(true);
+                getPatientsByBranch(currentBranch, { search: value, limit: 5 })
+                    .then(res => {
+                        if (res && res.data && res.data.length > 0) {
+                            setSearchResults(res.data);
+                            setShowDropdown(true);
+                        }
+                    })
+                    .catch(err => console.error("Search failed", err))
+                    .finally(() => setIsSearching(false));
+            }
+        }
+    };
+
+    // Auto-formatting mask for Date of Birth (DD/MM/YYYY) with Auto-Slash
+    const handleDobChange = (e) => {
+        const input = e.target.value;
+        let val = input.replace(/\D/g, ''); // Remove all non-digits
+        if (val.length > 8) val = val.substring(0, 8);
+
+        let formatted = val;
+        if (val.length >= 5) {
+            formatted = `${val.substring(0, 2)}/${val.substring(2, 4)}/${val.substring(4, 8)}`;
+        } else if (val.length >= 3) {
+            formatted = `${val.substring(0, 2)}/${val.substring(2, 4)}`;
+            // Auto append 2nd slash if moving forward
+            if (val.length === 4 && input.length > formData.dateOfBirth.length) {
+                formatted += '/';
+            }
+        } else if (val.length >= 1) {
+            formatted = val;
+            // Auto append 1st slash if moving forward
+            if (val.length === 2 && input.length > formData.dateOfBirth.length) {
+                formatted += '/';
+            }
+        } else {
+            formatted = '';
+        }
+
+        setFormData(prev => ({ ...prev, dateOfBirth: formatted }));
+
+        // Unlink patient if manually editing
+        if (formData.patientId) {
+            setFormData(prev => ({ ...prev, patientId: null, patientType: 'New Patient' }));
+        }
     };
 
     const handleSearchChange = async (e) => {
@@ -219,7 +282,7 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             phone: patient.phone || '',
             fullName: patient.fullName || '',
             email: patient.email || '',
-            dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth).toISOString().split('T')[0] : '',
+            dateOfBirth: formatToDDMMYYYY(patient.dateOfBirth),
             age: patient.age || '',
             gender: patient.gender || 'Male',
             bloodGroup: patient.bloodGroup || '',
@@ -400,7 +463,33 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
 
                                 <div className="form-control">
                                     <label className="label"><span className="label-text font-medium">Date of Birth</span></label>
-                                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="input input-bordered w-full bg-transparent" />
+                                    <div className="relative flex items-center">
+                                        <input
+                                            type="text"
+                                            name="dateOfBirth"
+                                            value={formData.dateOfBirth}
+                                            onChange={handleDobChange}
+                                            placeholder="DD/MM/YYYY"
+                                            className="input input-bordered w-full bg-transparent pr-10"
+                                            maxLength="10"
+                                        />
+                                        {/* Invisible date input strictly for opening the native picker dropdown */}
+                                        <input
+                                            type="date"
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    const [y, m, d] = e.target.value.split('-');
+                                                    setFormData(prev => ({ ...prev, dateOfBirth: `${d}/${m}/${y}` }));
+                                                    if (formData.patientId) {
+                                                        setFormData(prev => ({ ...prev, patientId: null, patientType: 'New Patient' }));
+                                                    }
+                                                }
+                                            }}
+                                            className="absolute right-0 top-0 w-10 h-full opacity-0 cursor-pointer z-10"
+                                            title="Select Date"
+                                        />
+                                        <HiCalendarDays className="absolute right-3 text-gray-500 z-0 pointer-events-none" size={20} />
+                                    </div>
                                 </div>
                                 <div className="form-control">
                                     <label className="label"><span className="label-text font-medium">Age</span></label>
