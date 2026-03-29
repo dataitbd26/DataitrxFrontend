@@ -5,7 +5,9 @@ import {
     HiTrash,
     HiEye,
     HiCalendarDays,
+    HiDocumentText
 } from "react-icons/hi2";
+import { useNavigate } from 'react-router-dom'; // 👈 ADD THIS IMPORT
 import useAppointment from '../../Hook/useAppointment';
 import useChamber from '../../Hook/useChamber';
 import AppointmentFormModal from '../../components/modal/AppointmentFormModal';
@@ -26,6 +28,8 @@ const Appointments = () => {
         const dd = String(today.getDate()).padStart(2, '0');
         return `${yyyy}-${mm}-${dd}`;
     };
+
+    const navigate = useNavigate(); // 👈 INIT NAVIGATE
 
     // Pagination & Config State
     const [limit, setLimit] = useState(10);
@@ -60,8 +64,14 @@ const Appointments = () => {
     // Time Block Modal State
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
-    // Hooks - Added updateAppointment here
-    const { getAppointmentsByBranch, removeAppointment, updateAppointment, loading: appointmentsLoading } = useAppointment();
+    // Hooks - Ensure getAppointmentById is destructured here
+    const { 
+        getAppointmentsByBranch, 
+        removeAppointment, 
+        updateAppointment, 
+        getAppointmentById, // 👈 MAKE SURE THIS IS HERE
+        loading: appointmentsLoading 
+    } = useAppointment();
     const { getChambersByBranch } = useChamber();
 
     // Setup Search Debounce (waits 500ms after user stops typing)
@@ -132,6 +142,23 @@ const Appointments = () => {
     const handleEditClick = (appointment) => { setSelectedAppointment(appointment); setIsModalOpen(true); };
     const handleDeleteClick = (appointment) => { setAppointmentToDelete(appointment); setIsDeleteModalOpen(true); };
     const handleViewClick = (appointment) => { setViewAppointmentId(appointment._id); setIsViewModalOpen(true); };
+
+    // 👇 UPDATED PRESCRIPTION CLICK FUNCTION 👇
+    const handlePrescriptionClick = async (appointment) => {
+        try {
+            // Fetch the full appointment details (including preCheckup data)
+            const fullAppointmentData = await getAppointmentById(appointment._id);
+            
+            // Navigate to the create prescription page and pass the data in state
+            navigate('/create-prescription', { 
+                state: { appointmentData: fullAppointmentData } 
+            });
+        } catch (error) {
+            console.error("Failed to fetch full appointment data for prescription", error);
+            Swal.fire('Error', 'Could not load appointment details.', 'error');
+        }
+    };
+    // 👆 -------------------------------------- 👆
 
     const handleUpdatePayment = async (id, status) => {
         Swal.fire({
@@ -403,13 +430,18 @@ const Appointments = () => {
                                         </td>
                                         <td>
                                             <div className="flex gap-1">
-                                                <button onClick={() => handleViewClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800">
+                                                 {/* New Prescription Button */}
+                                                <button title="Create Prescription" onClick={() => handlePrescriptionClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 dark:border-gray-600">
+                                                    <HiDocumentText className="text-blue-500" />
+                                                </button>
+                                                <button title="View" onClick={() => handleViewClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800">
                                                     <HiEye className="text-gray-600 dark:text-gray-300" />
                                                 </button>
-                                                <button onClick={() => handleEditClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800">
+                                                <button title="Edit" onClick={() => handleEditClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800">
                                                     <HiPencilSquare className="text-gray-600 dark:text-gray-300" />
                                                 </button>
-                                                <button onClick={() => handleDeleteClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 dark:border-gray-600">
+                                               
+                                                <button title="Delete" onClick={() => handleDeleteClick(appt)} className="btn btn-xs btn-square bg-transparent border-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 dark:border-gray-600">
                                                     <HiTrash className="text-red-500" />
                                                 </button>
                                             </div>
@@ -479,7 +511,6 @@ const Appointments = () => {
             />
         </div>
     );
-
 };
 
 export default Appointments;
