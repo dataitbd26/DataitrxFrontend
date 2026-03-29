@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ICONS } from './Icons';
 import { FileText } from 'lucide-react';
+import { FaWhatsapp, FaEnvelope } from 'react-icons/fa';
+import { HiXMark } from 'react-icons/hi2';
 
-// ✨ Accept onPrint and onExportPdf in props
-export default function Sidebar({ activeTab, setActiveTab, language, onSave, onPrint, onExportPdf }) {
+export default function Sidebar({ 
+  activeTab, 
+  setActiveTab, 
+  language, 
+  onSave, 
+  onPrint, 
+  onExportPdf,
+  prescriptionData = {}, 
+  doctorProfile = {}, 
+  selectedChamber = {} 
+}) {
   const dict = {
     EN: {
       patient: 'Patient', vitals: 'Vital Signs', complaints: 'Chief Complaints',
@@ -33,83 +44,268 @@ export default function Sidebar({ activeTab, setActiveTab, language, onSave, onP
     { id: 'advice', label: t.advice, icon: ICONS.Advice },
   ];
 
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const shareMenuRef = useRef(null);
+  const [shareModal, setShareModal] = useState({ type: null, data: null });
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target)) {
+        setIsShareMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getShareDetails = () => {
+    // 1. Extract and clean the phone number from the dynamic prescription state
+    let cleanPhone = prescriptionData?.patient?.phone ? prescriptionData.patient.phone.replace(/\D/g, '') : '';
+    
+    // 2. Format the number dynamically (Auto-add country code if it's a local 11-digit BD number)
+    if (cleanPhone.length === 11 && cleanPhone.startsWith('01')) {
+      cleanPhone = '88' + cleanPhone;
+    }
+
+    return {
+      patientName: prescriptionData?.patient?.name || 'Patient',
+      patientPhone: cleanPhone, 
+      patientEmail: prescriptionData?.patient?.email || '', 
+      doctorName: doctorProfile?.name || 'Doctor',
+      clinicName: selectedChamber?.chamberName || 'Our Clinic',
+    };
+  };
+
+  const openWhatsAppModal = () => {
+    const { patientName, patientPhone, doctorName, clinicName } = getShareDetails();
+    const text = `Hello ${patientName},\nThis is ${doctorName} from ${clinicName}.\n\nYour prescription is ready. Please follow the instructions carefully.\n\nThank you!`;
+    
+    setShareModal({
+      type: 'whatsapp',
+      data: { phone: patientPhone, message: text }
+    });
+    setIsShareMenuOpen(false);
+  };
+
+  const openEmailModal = () => {
+    const { patientName, patientEmail, doctorName } = getShareDetails();
+    const subject = `Follow-up from ${doctorName}`;
+    const body = `Dear ${patientName},\n\nI hope you are doing well.\n\nPlease follow your prescription and contact if needed.\n\nRegards,\n${doctorName}`;
+
+    setShareModal({
+      type: 'email',
+      data: { email: patientEmail, subject: subject, message: body }
+    });
+    setIsShareMenuOpen(false);
+  };
+
+  const executeWhatsAppShare = () => {
+    const { phone, message } = shareModal.data;
+    // Final safety check to strip spaces if the doctor edited the number manually in the modal
+    const finalPhone = phone ? phone.replace(/\D/g, '') : '';
+    
+    const url = finalPhone
+      ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(message)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+      
+    window.open(url, '_blank');
+    setShareModal({ type: null, data: null });
+  };
+
+  const executeEmailShare = () => {
+    const { email, subject, message } = shareModal.data;
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+    window.open(mailtoUrl, '_blank');
+    setShareModal({ type: null, data: null });
+  };
+
+  const handleModalChange = (field, value) => {
+    setShareModal(prev => ({
+      ...prev,
+      data: { ...prev.data, [field]: value }
+    }));
+  };
+
   return (
-    // ✨ ADDED print:hidden
-    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 transition-colors duration-300 print:hidden">
-      <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
-        {/* Navigation Map remains exactly the same... */}
-        <nav className="space-y-1 px-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
+    <>
+      <aside className="w-64 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 transition-colors duration-300 print:hidden relative z-40">
+        <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+          <nav className="space-y-1 px-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                    ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
+                    : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  {item.label}
+                </button>
+              );
+            })}
+
+            <div className="mt-4 px-1">
               <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
-                  ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
-                  : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700'
+                onClick={() => setActiveTab('interactions')}
+                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border transition-colors ${activeTab === 'interactions'
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40'
                   }`}
               >
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                {item.label}
+                <div className="flex items-center gap-2">
+                  <ICONS.Interactions size={18} />
+                  <span className="text-sm font-semibold">{t.interactions}</span>
+                </div>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${activeTab === 'interactions' ? 'bg-white text-amber-600' : 'bg-amber-500 text-white'
+                  }`}>AI</span>
               </button>
-            );
-          })}
+            </div>
+          </nav>
+        </div>
 
-          <div className="mt-4 px-1">
+        <div className="p-4 border-t border-slate-100 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800 transition-colors duration-300">
+          <button
+            onClick={onSave}
+            className="w-full bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all shadow-sm"
+          >
+            <ICONS.Save size={18} />
+            {t.save}
+          </button>
+
+          <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => setActiveTab('interactions')}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border transition-colors ${activeTab === 'interactions'
-                ? 'bg-amber-500 text-white border-amber-500'
-                : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40'
-                }`}
+              onClick={onPrint}
+              className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <ICONS.Interactions size={18} />
-                <span className="text-sm font-semibold">{t.interactions}</span>
-              </div>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${activeTab === 'interactions' ? 'bg-white text-amber-600' : 'bg-amber-500 text-white'
-                }`}>AI</span>
+              <ICONS.Print size={16} /> {t.print}
+            </button>
+
+            <button
+              onClick={onExportPdf}
+              className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
+            >
+              <FileText size={16} /> {t.pdf}
+            </button>
+
+            <div className="relative" ref={shareMenuRef}>
+              <button 
+                onClick={() => setIsShareMenuOpen(!isShareMenuOpen)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
+              >
+                <ICONS.Share size={16} /> {t.share}
+              </button>
+
+              {isShareMenuOpen && (
+                <div className="absolute bottom-full mb-2 left-0 w-48 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
+                  <button 
+                    onClick={openWhatsAppModal}
+                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm font-medium text-slate-700 dark:text-gray-200"
+                  >
+                    <FaWhatsapp className="text-green-500 text-lg" /> WhatsApp Patient
+                  </button>
+                  <button 
+                    onClick={openEmailModal}
+                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium text-slate-700 dark:text-gray-200 border-t border-slate-100 dark:border-gray-700"
+                  >
+                    <FaEnvelope className="text-blue-500 text-lg" /> Email Patient
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors">
+              <ICONS.Template size={16} /> {t.template}
             </button>
           </div>
-        </nav>
-      </div>
-
-      <div className="p-4 border-t border-slate-100 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800 transition-colors duration-300">
-        <button
-          onClick={onSave}
-          className="w-full bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all shadow-sm"
-        >
-          <ICONS.Save size={18} />
-          {t.save}
-        </button>
-
-        <div className="grid grid-cols-2 gap-2">
-          {/* ✨ Connected Print Handler */}
-          <button
-            onClick={onPrint}
-            className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
-          >
-            <ICONS.Print size={16} /> {t.print}
-          </button>
-
-          {/* ✨ Connected PDF Handler */}
-          <button
-            onClick={onExportPdf}
-            className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
-          >
-            <FileText size={16} /> {t.pdf}
-          </button>
-
-          <button className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors">
-            <ICONS.Share size={16} /> {t.share}
-          </button>
-          <button className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors">
-            <ICONS.Template size={16} /> {t.template}
-          </button>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      {shareModal.type && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl border border-slate-200 dark:border-gray-700 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 dark:border-gray-700">
+              <h3 className="font-bold text-lg flex items-center gap-2 text-slate-800 dark:text-gray-100">
+                {shareModal.type === 'whatsapp' ? <FaWhatsapp className="text-green-500" /> : <FaEnvelope className="text-blue-500" />}
+                {shareModal.type === 'whatsapp' ? 'Review WhatsApp Message' : 'Review Email Message'}
+              </h3>
+              <button onClick={() => setShareModal({ type: null, data: null })} className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300">
+                <HiXMark size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-4">
+              {shareModal.type === 'whatsapp' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase">Patient WhatsApp Number</label>
+                  <input 
+                    type="text" 
+                    value={shareModal.data.phone || ''} 
+                    onChange={(e) => handleModalChange('phone', e.target.value)}
+                    placeholder="e.g. 8801700000000"
+                    className="w-full bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-gray-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {shareModal.type === 'email' && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase">Patient Email Address</label>
+                    <input 
+                      type="email" 
+                      value={shareModal.data.email || ''} 
+                      onChange={(e) => handleModalChange('email', e.target.value)}
+                      placeholder="patient@example.com"
+                      className="w-full bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-gray-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase">Subject</label>
+                    <input 
+                      type="text" 
+                      value={shareModal.data.subject || ''} 
+                      onChange={(e) => handleModalChange('subject', e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-gray-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase">Message Content</label>
+                <textarea 
+                  rows={6}
+                  value={shareModal.data.message || ''} 
+                  onChange={(e) => handleModalChange('message', e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-gray-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 bg-slate-50 dark:bg-gray-900 border-t border-slate-100 dark:border-gray-700">
+              <button 
+                onClick={() => setShareModal({ type: null, data: null })}
+                className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={shareModal.type === 'whatsapp' ? executeWhatsAppShare : executeEmailShare}
+                className={`px-5 py-2 text-sm font-bold text-white rounded-lg transition-colors shadow-sm ${shareModal.type === 'whatsapp' ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/20'}`}
+              >
+                {shareModal.type === 'whatsapp' ? 'Open WhatsApp' : 'Open Email App'}
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      )}
+    </>
   );
 }
