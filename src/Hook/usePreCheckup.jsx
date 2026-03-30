@@ -66,6 +66,21 @@ const usePreCheckup = () => {
         }
     };
 
+    const createPatientWithPreCheckup = async (fullData) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const { data } = await axiosSecure.post('/precheckups/create-full', fullData);
+            return data;
+        } catch (err) {
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const removePreCheckup = async (id) => {
         setLoading(true);
         setError(null);
@@ -89,6 +104,7 @@ const usePreCheckup = () => {
         createPreCheckup,
         updatePreCheckup,
         removePreCheckup,
+        createPatientWithPreCheckup,
     };
 };
 
