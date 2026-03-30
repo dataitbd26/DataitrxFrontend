@@ -5,7 +5,7 @@ import Error404 from "../pages/Error404/Error";
 import Login from "../pages/Login/Login";
 import Root from "./Root/Root";
 import PrivateRoot from "./Root/PrivateRoot";
-
+import PermissionPrivateRoute from "./Root/PermissionPrivateRoute";
 // Admin Imports
 import Aroot from "./Root/Admin/Aroot";
 // import HomeA from "../pages/Dashboard/Home";
@@ -89,79 +89,80 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/dashboard",
+        // element: <PermissionPrivateRoute><Dashboard /></PermissionPrivateRoute>, 
         element: <PrivateRoot><Dashboard /></PrivateRoot>,
       },
       {
         path: "/create-prescription",
-        element: <PrivateRoot><CreatePrescription /></PrivateRoot>,
+        element: <PermissionPrivateRoute><CreatePrescription /></PermissionPrivateRoute>,
       },
       {
         path: "/prescription-template",
-        element: <PrivateRoot><PrescriptionTemplate /></PrivateRoot>,
+        element: <PermissionPrivateRoute><PrescriptionTemplate /></PermissionPrivateRoute>,
       },
       {
         path: "/prescriptions",
-        element: <PrivateRoot><Prescriptions /></PrivateRoot>,
+        element: <PermissionPrivateRoute><Prescriptions /></PermissionPrivateRoute>,
       },
       {
         path: "/appointments",
-        element: <PrivateRoot><Appointments /></PrivateRoot>,
+        element: <PermissionPrivateRoute><Appointments /></PermissionPrivateRoute>,
       },
       {
         path: "/pre-checkup",
-        element: <PrivateRoot><PreCheckup /></PrivateRoot>,
+        element: <PermissionPrivateRoute><PreCheckup /></PermissionPrivateRoute>,
       },
       {
         path: "/doctor-patient",
-        element: <PrivateRoot><DoctorPatient /></PrivateRoot>,
+        element: <PermissionPrivateRoute><DoctorPatient /></PermissionPrivateRoute>,
       },
       {
         path: "/doctor-chamber",
-        element: <PrivateRoot><DoctorChamber /></PrivateRoot>,
+        element: <PermissionPrivateRoute><DoctorChamber /></PermissionPrivateRoute>,
       },
       {
         path: "/users",
-        element: <PrivateRoot><Users /></PrivateRoot>,
+        element: <PermissionPrivateRoute><Users /></PermissionPrivateRoute>,
       },
       {
         path: "/profile",
-        element: <PrivateRoot><Profile /></PrivateRoot>,
+        element: <PermissionPrivateRoute><Profile /></PermissionPrivateRoute>,
       },
       {
         path: "/payment",
-        element: <PrivateRoot><Payment /></PrivateRoot>,
+        element: <PermissionPrivateRoute><Payment /></PermissionPrivateRoute>,
       },
       {
         path: "/send-sms",
-        element: <PrivateRoot><SendSms /></PrivateRoot>,
+        element: <PermissionPrivateRoute><SendSms /></PermissionPrivateRoute>,
       },
       {
         path: "/settings/permissions",
-        element: <PrivateRoot><ManagePermissions /></PrivateRoot>,
+        element: <PermissionPrivateRoute><ManagePermissions /></PermissionPrivateRoute>,
       },
       {
         path: "/settings/email",
-        element: <PrivateRoot><ManageEmail /></PrivateRoot>,
+        element: <PermissionPrivateRoute><ManageEmail /></PermissionPrivateRoute>,
       },
       {
         path: "/settings/sms-config",
-        element: <PrivateRoot><ManageSms /></PrivateRoot>,
+        element: <PermissionPrivateRoute><ManageSms /></PermissionPrivateRoute>,
       },
       {
         path: "/settings/system",
-        element: <PrivateRoot><ManageSystem /></PrivateRoot>,
+        element: <PermissionPrivateRoute><ManageSystem /></PermissionPrivateRoute>,
       },
       {
         path: "/settings/website-profile",
-        element: <PrivateRoot><WebsiteProfile /></PrivateRoot>,
+        element: <PermissionPrivateRoute><WebsiteProfile /></PermissionPrivateRoute>,
       },
       {
         path: "/logout",
-        element: <PrivateRoot><Logout /></PrivateRoot>,
+        element: <PermissionPrivateRoute><Logout /></PermissionPrivateRoute>,
       },
       {
         path: "/admin/blog",
-        element: <PrivateRoot><AdminBlog /></PrivateRoot>,
+        element: <PermissionPrivateRoute><AdminBlog /></PermissionPrivateRoute>,
       },
     ],
   },
