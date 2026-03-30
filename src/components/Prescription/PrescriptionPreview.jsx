@@ -16,16 +16,18 @@ export default function PrescriptionPreview({ data, language }) {
       advice: 'Advice', followUp: 'Follow Up', reviewAfter: 'Review after',
       nextVisit: 'Next Visit', signature: 'Signature',
       placeholderRx: 'Add medicines from the right panel',
-      placeholderInfo: 'Vital signs, chief complaint, history, examination, diagnosis & investigations will appear here'
+      placeholderInfo: 'Vital signs, chief complaint, history, examination, diagnosis & investigations will appear here',
+      days: 'Days', months: 'Months'
     },
     BN: {
-      name: 'নাম', age: 'বয়স', gender: 'লিঙ্গ', date: 'তারিখ',
+      name: 'নাম', age: 'বয়স', gender: 'লিঙ্গ', date: 'তারিখ',
       vitals: 'শারীরিক লক্ষণ', complaints: 'প্রধান সমস্যা', history: 'পূর্বের ইতিহাস',
-      examination: 'শারীরিক পরীক্ষা', diagnosis: 'রোগ নির্ণয়', investigations: 'পরীক্ষা-নিরীক্ষা',
+      examination: 'শারীরিক পরীক্ষা', diagnosis: 'রোগ নির্ণয়', investigations: 'পরীক্ষা-নিরীক্ষা',
       advice: 'পরামর্শ', followUp: 'ফলোআপ', reviewAfter: 'সাক্ষাৎ',
       nextVisit: 'পরবর্তী সাক্ষাৎ', signature: 'স্বাক্ষর',
       placeholderRx: 'ডান দিকের প্যানেল থেকে ওষুধ যোগ করুন',
-      placeholderInfo: 'শারীরিক লক্ষণ, প্রধান সমস্যা, ইতিহাস, পরীক্ষা ও রোগ নির্ণয় এখানে প্রদর্শিত হবে'
+      placeholderInfo: 'শারীরিক লক্ষণ, প্রধান সমস্যা, ইতিহাস, পরীক্ষা ও রোগ নির্ণয় এখানে প্রদর্শিত হবে',
+      days: 'দিন', months: 'মাস'
     }
   };
   const t = dict[language] || dict.EN;
@@ -186,7 +188,10 @@ export default function PrescriptionPreview({ data, language }) {
             {data.followUp && (
               <div className="mt-6">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.followUp}</h4>
-                <p className="text-slate-700">{t.reviewAfter} {data.followUp}</p>
+                {/* ✨ Added the dynamic Unit rendering here, defaulting to 'days' if blank */}
+                <p className="text-slate-700">
+                  {t.reviewAfter} {data.followUp} {t[data.followUpUnit || 'days']}
+                </p>
               </div>
             )}
           </div>

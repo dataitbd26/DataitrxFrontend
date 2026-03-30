@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SectionTitle from "../../components/common/SectionTitle";
 
 const DatabaseExportButton = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -45,49 +46,52 @@ const DatabaseExportButton = () => {
   };
 
   return (
-    <div className="bg-[#f2f2f2] dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-[#e0e0e0] dark:border-gray-700 max-w-[450px] font-sans transition-colors duration-200 mt-5">
-      <h2 className="text-[#181818] dark:text-gray-100 mt-0 mb-2 text-xl font-bold">
-        Database Backup
-      </h2>
-      <p className="text-gray-600 dark:text-gray-300 text-sm mb-5">
-        Download a complete snapshot of the system data. Select your preferred format below.
-      </p>
+    <div className="p-4 md:p-6 bg-base-100 dark:bg-casual-black min-h-screen font-primary text-casual-black dark:text-concrete transition-colors">
+      
+      {/* ✨ Implemented SectionTitle here */}
+      <SectionTitle 
+        title="Database Backup" 
+        subtitle="Download a complete snapshot of the system data. Select your preferred format below."
+      />
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-[#181818] dark:text-gray-200">
-            Export Format
-          </label>
-          <select 
-            value={format} 
-            onChange={(e) => setFormat(e.target.value)}
+      {/* The Export Card */}
+      <div className="bg-[#f2f2f2] dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-[#e0e0e0] dark:border-gray-700 max-w-[450px] font-sans transition-colors duration-200 mt-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-semibold text-[#181818] dark:text-gray-200">
+              Export Format
+            </label>
+            <select 
+              value={format} 
+              onChange={(e) => setFormat(e.target.value)}
+              disabled={isExporting}
+              className="p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#181818] dark:text-white text-base outline-none focus:ring-2 focus:ring-[#147bff] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              <option value="json">Standard JSON (.json)</option>
+              <option value="ndjson">Streaming JSON (.ndjson) - Best for large backups</option>
+              <option value="xlsx">Excel Workbook (.xlsx) - Best for viewing</option>
+              <option value="csv">CSV Archive (.zip) - Best for data analysis</option>
+            </select>
+          </div>
+
+          <button 
+            onClick={handleExport} 
             disabled={isExporting}
-            className="p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#181818] dark:text-white text-base outline-none focus:ring-2 focus:ring-[#147bff] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            className={`p-3.5 rounded-lg text-white text-base font-semibold flex justify-center items-center gap-2 transition-colors ${
+              isExporting 
+                ? 'bg-blue-300 dark:bg-blue-800 cursor-wait' 
+                : 'bg-[#147bff] hover:bg-blue-600 cursor-pointer'
+            }`}
           >
-            <option value="json">Standard JSON (.json)</option>
-            <option value="ndjson">Streaming JSON (.ndjson) - Best for large backups</option>
-            <option value="xlsx">Excel Workbook (.xlsx) - Best for viewing</option>
-            <option value="csv">CSV Archive (.zip) - Best for data analysis</option>
-          </select>
+            {isExporting ? (
+              <>
+                {/* Tailwind replacement for your custom CSS spinner */}
+                <span className="w-4 h-4 border-2 border-white border-b-transparent rounded-full animate-spin inline-block"></span>
+                Exporting...
+              </>
+            ) : 'Download Backup'}
+          </button>
         </div>
-
-        <button 
-          onClick={handleExport} 
-          disabled={isExporting}
-          className={`p-3.5 rounded-lg text-white text-base font-semibold flex justify-center items-center gap-2 transition-colors ${
-            isExporting 
-              ? 'bg-blue-300 dark:bg-blue-800 cursor-wait' 
-              : 'bg-[#147bff] hover:bg-blue-600 cursor-pointer'
-          }`}
-        >
-          {isExporting ? (
-            <>
-              {/* Tailwind replacement for your custom CSS spinner */}
-              <span className="w-4 h-4 border-2 border-white border-b-transparent rounded-full animate-spin inline-block"></span>
-              Exporting...
-            </>
-          ) : 'Download Backup'}
-        </button>
       </div>
     </div>
   );
