@@ -3,6 +3,7 @@ import Sidebar from './../../components/Prescription/Sidebar';
 import PrescriptionPreview from './../../components/Prescription/PrescriptionPreview';
 import RightPanel from './../../components/Prescription/RightPanel';
 import { ICONS } from './../../components/Prescription/Icons';
+import { useLocation } from 'react-router-dom'; // 👈 ADD THIS IMPORT
 
 // Hooks and context
 import usePrescription from '../../Hook/usePrescription';
@@ -15,6 +16,9 @@ import usePatient from '../../Hook/usePatient';
 import { generatePrescriptionPdf } from '../../components/utils/generatePrescriptionPdf';
 
 export default function CreatePrescription() {
+  const location = useLocation(); // 👈 INIT LOCATION
+  const incomingAppointment = location.state?.appointmentData; // 👈 GRAB PASSED DATA
+
   const [activeTab, setActiveTab] = useState('patient');
   const [language, setLanguage] = useState('EN');
   const [isExporting, setIsExporting] = useState(false); // State for PDF loading
@@ -29,7 +33,7 @@ export default function CreatePrescription() {
   const [doctorProfile, setDoctorProfile] = useState(null);
 
   const [prescriptionData, setPrescriptionData] = useState({
-    patient: { name: '', age: '', gender: '', phone: '' },
+    patient: { name: '', age: '', gender: '', phone: '', patientId: '' }, // Added patientId
     vitals: { bp: '', weight: '', pulse: '', temp: '', height: '', spo2: '' },
     complaints: [],
     complaintsText: '',
@@ -45,6 +49,37 @@ export default function CreatePrescription() {
     adviceText: '',
     followUp: ''
   });
+
+  // 👇 NEW useEffect TO PRE-FILL DATA 👇
+  useEffect(() => {
+    if (incomingAppointment) {
+      const pId = incomingAppointment.patientId;
+      const checkup = incomingAppointment.preCheckupId;
+
+      setPrescriptionData(prev => ({
+        ...prev,
+        patient: {
+          name: pId?.fullName || '',
+          age: pId?.age || '',
+          gender: pId?.gender || '',
+          phone: pId?.phone || '',
+          patientId: pId?._id || ''
+        },
+        vitals: {
+          bp: checkup?.examination?.vitals?.bp || prev.vitals.bp,
+          weight: checkup?.examination?.vitals?.weight || prev.vitals.weight,
+          pulse: checkup?.examination?.vitals?.pulse || prev.vitals.pulse,
+          temp: checkup?.examination?.vitals?.temperature || prev.vitals.temp,
+          height: checkup?.examination?.vitals?.height || prev.vitals.height,
+          spo2: prev.vitals.spo2
+        },
+        complaints: checkup?.chiefComplaints 
+            ? checkup.chiefComplaints.map(c => c.complaint) 
+            : prev.complaints
+      }));
+    }
+  }, [incomingAppointment]);
+  // 👆 ------------------------------- 👆
 
   useEffect(() => {
     const fetchHeaderData = async () => {
