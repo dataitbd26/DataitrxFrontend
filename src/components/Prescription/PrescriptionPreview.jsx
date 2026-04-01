@@ -1,13 +1,12 @@
 import React from 'react';
 
-export default function PrescriptionPreview({ data, language }) {
+export default function PrescriptionPreview({ data, language, doctor, chamber }) {
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
 
-  // Translation Dictionary for the printed paper
   const dict = {
     EN: {
       name: 'Name', age: 'Age', gender: 'Gender', date: 'Date',
@@ -32,30 +31,92 @@ export default function PrescriptionPreview({ data, language }) {
   };
   const t = dict[language] || dict.EN;
 
+  const formatSchedule = (scheduleArray) => {
+    if (!scheduleArray || scheduleArray.length === 0) return 'By Appointment';
+    const activeDays = scheduleArray.filter(day => !day.isHoliday);
+    if (activeDays.length === 0) return 'Currently Unavailable';
+
+    const timeGroups = {};
+    activeDays.forEach(day => {
+      const timeStr = `${day.startTime || ''} - ${day.endTime || ''}`;
+      if (!timeGroups[timeStr]) timeGroups[timeStr] = [];
+      timeGroups[timeStr].push(day.day.substring(0, 3)); 
+    });
+
+    return Object.entries(timeGroups)
+      .map(([time, days]) => `${days.join(', ')} (${time})`)
+      .join(' | ');
+  };
+
   return (
-    <div className="bg-slate-100 dark:bg-gray-900 flex-1 overflow-y-auto p-4 md:p-8 flex justify-center print:p-0 print:bg-white custom-scrollbar transition-colors duration-300">
-      {/* The Paper itself - Force light mode styling so it always looks like a document */}
-      <div id="prescription-preview" className="bg-white w-full max-w-[210mm] min-h-[297mm] shadow-lg p-10 flex flex-col relative print:shadow-none print:w-full print:h-full text-slate-900 mx-auto">
+    <div className="bg-slate-100 dark:bg-gray-900 flex-1 overflow-y-auto p-4 md:p-8 flex justify-center print:p-0 print:bg-white transition-colors duration-300 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] print:overflow-visible print:h-auto">
+      
+      {/* ✨ NEW: CSS Print Rules to override parent app constraints and enable proper pagination ✨ */}
+      <style>
+        {`
+          @media print {
+            body, html, #root, .min-h-screen, .h-screen {
+              height: auto !important;
+              min-height: 0 !important;
+              overflow: visible !important;
+            }
+            /* Ensures flex layouts don't violently collapse during page breaks */
+            .flex-1 {
+              height: auto !important;
+            }
+            @page {
+              margin: 10mm;
+            }
+          }
+        `}
+      </style>
+
+      {/* Changed print:h-full to print:h-auto so it can expand to multiple pages natively */}
+      <div id="prescription-preview" className="bg-white w-full max-w-[210mm] min-h-[297mm] shadow-lg p-10 flex flex-col relative print:shadow-none print:w-full print:h-auto print:min-h-0 text-slate-900 mx-auto">
 
         {/* Header / Logo Area */}
-        <div className="flex justify-between items-start mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-slate-100 flex items-center justify-center rounded-lg uppercase text-xs font-bold text-slate-400 tracking-wider">
-              LOGO
-            </div>
-            <div>
-              <div className="h-5 w-48 bg-slate-100 rounded mb-2"></div>
-              <div className="h-3 w-64 bg-slate-50 rounded"></div>
+        <div id="prescription-header" className="hidden print:flex justify-between items-start mb-6 pb-6 border-b-2 border-slate-800 break-inside-avoid">
+          <div className="flex items-start gap-6 max-w-[60%]">
+            {doctor?.doctorPicture ? (
+              <img src={doctor.doctorPicture} alt="Doctor" crossOrigin="anonymous" className="w-20 h-20 object-cover rounded-lg shrink-0 border border-slate-200" />
+            ) : (
+              <div className="w-20 h-20 bg-slate-100 flex items-center justify-center rounded-lg uppercase text-sm font-bold text-slate-400 tracking-wider shrink-0 border border-slate-200">
+                LOGO
+              </div>
+            )}
+            <div className="text-left">
+              <h2 className="text-2xl font-bold uppercase text-slate-800 m-0 mb-1">
+                {doctor?.name || 'Doctor Name'}
+              </h2>
+              <p className="text-sm text-slate-700 m-0 mb-1">
+                {doctor?.degree || 'Qualifications'}
+              </p>
+              <p className="text-sm font-bold text-cyan-700 m-0 mb-1">
+                {doctor?.designation || 'Designation'} {doctor?.institution ? ` • ${doctor.institution}` : ''}
+              </p>
+              <p className="text-sm text-slate-700 m-0">
+                <strong>BMDC Reg. No:</strong> {doctor?.bmdcRegistrationNumber || 'N/A'}
+              </p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="h-4 w-32 bg-slate-100 rounded mb-1 ml-auto"></div>
-            <div className="h-3 w-40 bg-slate-50 rounded ml-auto"></div>
+          <div className="text-right max-w-[40%]">
+            <h3 className="text-lg font-bold text-slate-800 m-0 mb-1">
+              {chamber?.chamberName || 'Chamber Name'}
+            </h3>
+            <p className="text-sm text-slate-700 m-0 mb-1 whitespace-pre-line">
+              {chamber?.address || 'Chamber Address'}
+            </p>
+            <p className="text-sm text-slate-700 m-0 mb-1">
+              <strong>Phone:</strong> {chamber?.mobileNumber || 'N/A'}
+            </p>
+            <p className="text-sm text-slate-700 m-0">
+              <strong>Visiting Hours:</strong> {formatSchedule(chamber?.schedule)}
+            </p>
           </div>
         </div>
 
         {/* Patient Info Bar */}
-        <div className="border-y-2 border-slate-800 py-3 mb-6">
+        <div className="border-b-2 border-slate-800 pb-3 mb-6 break-inside-avoid">
           <div className="grid grid-cols-4 gap-4 text-sm font-bold text-slate-900">
             <div className="flex gap-1 items-baseline">
               {t.name}: <span className="font-normal ml-1 border-b border-dotted border-slate-400 grow min-w-[50px]">{data.patient.name}</span>
@@ -73,13 +134,13 @@ export default function PrescriptionPreview({ data, language }) {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex gap-8">
+        <div className="flex-1 flex gap-8 print:h-auto print:overflow-visible">
           {/* Left Column */}
           <div className="w-1/3 border-r border-slate-200 pr-6 flex flex-col gap-6">
-
-            {/* Vitals */}
+            
+            {/* ✨ ADDED 'break-inside-avoid' to all sections to prevent bad page splits ✨ */}
             {(data.vitals.bp || data.vitals.weight || data.vitals.pulse || data.vitals.temp) && (
-              <div className="text-sm">
+              <div className="text-sm break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.vitals}</h4>
                 <div className="space-y-1 text-slate-700">
                   {data.vitals.bp && <div>BP: {data.vitals.bp} mmHg</div>}
@@ -92,9 +153,8 @@ export default function PrescriptionPreview({ data, language }) {
               </div>
             )}
 
-            {/* Chief Complaints */}
             {data.complaints.length > 0 && (
-              <div className="text-sm">
+              <div className="text-sm break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.complaints}</h4>
                 <ul className="list-disc list-inside text-slate-700 space-y-0.5">
                   {data.complaints.map((c, i) => <li key={i}>{c}</li>)}
@@ -102,9 +162,8 @@ export default function PrescriptionPreview({ data, language }) {
               </div>
             )}
 
-            {/* History */}
             {data.history.length > 0 && (
-              <div className="text-sm">
+              <div className="text-sm break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.history}</h4>
                 <ul className="list-disc list-inside text-slate-700 space-y-0.5">
                   {data.history.map((h, i) => <li key={i}>{h}</li>)}
@@ -112,9 +171,8 @@ export default function PrescriptionPreview({ data, language }) {
               </div>
             )}
 
-            {/* On Examination */}
             {data.examination.length > 0 && (
-              <div className="text-sm">
+              <div className="text-sm break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.examination}</h4>
                 <ul className="list-disc list-inside text-slate-700 space-y-0.5">
                   {data.examination.map((e, i) => <li key={i}>{e}</li>)}
@@ -122,9 +180,8 @@ export default function PrescriptionPreview({ data, language }) {
               </div>
             )}
 
-            {/* Diagnosis */}
             {data.diagnosis.length > 0 && (
-              <div className="text-sm">
+              <div className="text-sm break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.diagnosis}</h4>
                 <ul className="list-disc list-inside text-slate-700 space-y-0.5">
                   {data.diagnosis.map((d, i) => <li key={i}>{d}</li>)}
@@ -132,9 +189,8 @@ export default function PrescriptionPreview({ data, language }) {
               </div>
             )}
 
-            {/* Investigations */}
             {data.investigations.length > 0 && (
-              <div className="text-sm">
+              <div className="text-sm break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.investigations}</h4>
                 <ul className="list-disc list-inside text-slate-700 space-y-0.5">
                   {data.investigations.map((inv, i) => <li key={i}>{inv}</li>)}
@@ -142,9 +198,8 @@ export default function PrescriptionPreview({ data, language }) {
               </div>
             )}
 
-            {/* Placeholder if empty */}
             {!data.vitals.bp && data.complaints.length === 0 && data.history.length === 0 && data.examination.length === 0 && data.diagnosis.length === 0 && data.investigations.length === 0 && (
-              <div className="text-xs text-slate-400 italic leading-relaxed mt-10">
+              <div className="text-xs text-slate-400 italic leading-relaxed mt-10 break-inside-avoid">
                 {t.placeholderInfo}
               </div>
             )}
@@ -152,15 +207,14 @@ export default function PrescriptionPreview({ data, language }) {
 
           {/* Right Column: Rx, Advice */}
           <div className="flex-1 flex flex-col">
-            <div className="flex items-baseline gap-2 mb-6">
+            <div className="flex items-baseline gap-2 mb-6 break-inside-avoid">
               <span className="text-4xl font-serif font-bold text-slate-900">Rx</span>
             </div>
 
-            {/* Medicines List */}
             {data.medicines.length > 0 ? (
               <div className="space-y-6 mb-8">
                 {data.medicines.map((med, index) => (
-                  <div key={index} className="text-sm text-slate-800">
+                  <div key={index} className="text-sm text-slate-800 break-inside-avoid">
                     <div className="font-bold text-base">{index + 1}. {med.name}</div>
                     <div className="text-slate-600 ml-4 mt-1">
                       {med.dosage} • {med.duration} • {med.instruction}
@@ -169,14 +223,13 @@ export default function PrescriptionPreview({ data, language }) {
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-slate-400 italic mb-8">
+              <div className="text-sm text-slate-400 italic mb-8 break-inside-avoid">
                 {t.placeholderRx}
               </div>
             )}
 
-            {/* Advice */}
             {data.advice.length > 0 && (
-              <div className="mt-8 border-t border-slate-100 pt-6">
+              <div className="mt-8 border-t border-slate-100 pt-6 break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-3 uppercase text-xs tracking-wider">{t.advice}</h4>
                 <ul className="list-disc list-inside text-slate-700 space-y-1">
                   {data.advice.map((a, i) => <li key={i}>{a}</li>)}
@@ -184,11 +237,9 @@ export default function PrescriptionPreview({ data, language }) {
               </div>
             )}
 
-            {/* Follow Up */}
             {data.followUp && (
-              <div className="mt-6">
+              <div className="mt-6 break-inside-avoid">
                 <h4 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">{t.followUp}</h4>
-                {/* ✨ Added the dynamic Unit rendering here, defaulting to 'days' if blank */}
                 <p className="text-slate-700">
                   {t.reviewAfter} {data.followUp} {t[data.followUpUnit || 'days']}
                 </p>
@@ -198,13 +249,23 @@ export default function PrescriptionPreview({ data, language }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-auto border-t border-slate-200 pt-8 flex justify-between items-end">
-          <div className="text-sm font-bold flex items-baseline gap-2">
-            {t.nextVisit}: <span className="w-32 border-b border-slate-400 inline-block"></span>
+        {/* ✨ ADDED 'break-inside-avoid print:mt-10' to ensure signature is never split onto a new page alone ✨ */}
+        <div className="mt-auto border-t border-slate-200 pt-8 flex justify-between items-end break-inside-avoid print:mt-10">
+          <div className="text-sm font-bold flex flex-col items-start gap-1">
+             <div className="flex items-baseline gap-2">
+                 {t.nextVisit}: <span className="w-32 border-b border-slate-400 inline-block"></span>
+             </div>
+             <div className="text-slate-600 mt-2 font-normal">
+                 {t.date}: {today}
+             </div>
           </div>
-          <div className="text-right">
-            <div className="w-40 border-b border-slate-400 mb-2"></div>
-            <div className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">{t.signature}</div>
+          <div className="text-right flex flex-col items-end">
+            {doctor?.signature ? (
+              <img src={doctor.signature} alt="Signature" crossOrigin="anonymous" className="h-12 mb-1 object-contain" />
+            ) : (
+              <div className="w-40 border-b border-slate-400 mb-2"></div>
+            )}
+            <div className="text-[12px] text-slate-800 uppercase tracking-widest font-bold">{t.signature}</div>
           </div>
         </div>
       </div>
