@@ -3,7 +3,7 @@ import Sidebar from './../../components/Prescription/Sidebar';
 import PrescriptionPreview from './../../components/Prescription/PrescriptionPreview';
 import RightPanel from './../../components/Prescription/RightPanel';
 import { ICONS } from './../../components/Prescription/Icons';
-import { useLocation } from 'react-router-dom'; // 👈 ADD THIS IMPORT
+import { useLocation } from 'react-router-dom';
 
 // Hooks and context
 import usePrescription from '../../Hook/usePrescription';
@@ -12,16 +12,19 @@ import useDoctorProfile from '../../Hook/useDoctorProfile';
 import { AuthContext } from '../../providers/AuthProvider';
 import usePatient from '../../Hook/usePatient';
 
-// Import the new PDF utility
+// Import the new PDF utility and Modal
 import { generatePrescriptionPdf } from '../../components/utils/generatePrescriptionPdf';
+import AppointmentViewModal from '../../components/modal/AppointmentViewModal'; // 👈 IMPORTED MODAL
 
 export default function CreatePrescription() {
-  const location = useLocation(); // 👈 INIT LOCATION
-  const incomingAppointment = location.state?.appointmentData; // 👈 GRAB PASSED DATA
+  const location = useLocation(); 
+  const incomingAppointment = location.state?.appointmentData; 
 
   const [activeTab, setActiveTab] = useState('patient');
   const [language, setLanguage] = useState('EN');
-  const [isExporting, setIsExporting] = useState(false); // State for PDF loading
+  const [isExporting, setIsExporting] = useState(false); 
+  
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // 👈 MODAL STATE
 
   const { branch, user } = useContext(AuthContext);
   const { createPrescription, loading: isSaving } = usePrescription();
@@ -33,7 +36,7 @@ export default function CreatePrescription() {
   const [doctorProfile, setDoctorProfile] = useState(null);
 
   const [prescriptionData, setPrescriptionData] = useState({
-    patient: { name: '', age: '', gender: '', phone: '', patientId: '' }, // Added patientId
+    patient: { name: '', age: '', gender: '', phone: '', patientId: '' }, 
     vitals: { bp: '', weight: '', pulse: '', temp: '', height: '', spo2: '' },
     complaints: [],
     complaintsText: '',
@@ -50,7 +53,10 @@ export default function CreatePrescription() {
     followUp: ''
   });
 
-  // 👇 NEW useEffect TO PRE-FILL DATA 👇
+  // 👇 PRE-CHECKUP CONDITIONALS 👇
+  const targetAppointmentId = incomingAppointment?._id;
+  const hasPreCheckup = Boolean(incomingAppointment?.preCheckupId);
+
   useEffect(() => {
     if (incomingAppointment) {
       const pId = incomingAppointment.patientId;
@@ -79,7 +85,6 @@ export default function CreatePrescription() {
       }));
     }
   }, [incomingAppointment]);
-  // 👆 ------------------------------- 👆
 
   useEffect(() => {
     const fetchHeaderData = async () => {
@@ -145,15 +150,12 @@ export default function CreatePrescription() {
     }
   };
 
-  // ✨ NEW: Handle Native Print
   const handlePrint = () => {
     window.print();
   };
 
-  // ✨ NEW: Handle PDF Export
   const handleExportPdf = async () => {
     setIsExporting(true);
-    // The ID matches the wrapper div in your PrescriptionPreview component
     await generatePrescriptionPdf('prescription-preview', prescriptionData.patient.name);
     setIsExporting(false);
   };
@@ -161,7 +163,6 @@ export default function CreatePrescription() {
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden font-sans transition-colors duration-300">
 
-      {/* ✨ ADDED print:hidden so the header disappears when printing */}
       <header className="h-14 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0 z-20 transition-colors duration-300 print:hidden">
         <div className="flex items-center gap-4">
           <button className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full transition-colors text-slate-600 dark:text-gray-300">
@@ -171,6 +172,22 @@ export default function CreatePrescription() {
         </div>
 
         <div className="flex items-center gap-3">
+          
+          {/* ✨ CONDITIONALLY RENDERED BUTTON ✨ */}
+          {hasPreCheckup && (
+            <button
+              type="button"
+              onClick={() => setIsViewModalOpen(true)}
+              className="mr-2 px-4 py-1.5 bg-[#0891B2] hover:bg-[#067a96] text-white font-bold text-sm rounded-lg shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              View Pre-Checkup
+            </button>
+          )}
+
           {chambers.length > 0 && (
             <select
               className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -213,16 +230,13 @@ export default function CreatePrescription() {
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* ✨ Passed handlePrint and handleExportPdf to Sidebar */}
-      <Sidebar
+        <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           language={language}
           onSave={handleSave}
           onPrint={handlePrint}
           onExportPdf={handleExportPdf}
-          
-         
           prescriptionData={prescriptionData}
           doctorProfile={doctorProfile}
           selectedChamber={selectedChamber}
@@ -253,6 +267,13 @@ export default function CreatePrescription() {
 
         <RightPanel activeTab={activeTab} data={prescriptionData} updateData={updateData} language={language} />
       </div>
+
+      {/* ✨ RENDER MODAL HERE ✨ */}
+      <AppointmentViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        appointmentId={targetAppointmentId}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import SectionTitle from "../../components/common/SectionTitle";
 
 const DatabaseImportButton = () => {
   const [isImporting, setIsImporting] = useState(false);
@@ -50,43 +51,49 @@ const DatabaseImportButton = () => {
   };
 
   return (
-    <div className="bg-[#f2f2f2] dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-[#e0e0e0] dark:border-gray-700 max-w-[450px] font-sans transition-colors duration-200 mt-5">
-      <h2 className="text-[#181818] dark:text-gray-100 mt-0 mb-2 text-xl font-bold">
-        Restore Database
-      </h2>
-      <p className="text-gray-600 dark:text-gray-300 text-sm mb-5">
-        Upload a previous backup to restore the system. <b className="dark:text-white">Warning:</b> This will overwrite current data. Only .json and .ndjson formats are supported.
-      </p>
+    // ✨ Wrapped in a page container identical to MedicineList
+    <div className="p-4 md:p-6 bg-base-100 dark:bg-casual-black min-h-screen font-primary text-casual-black dark:text-concrete transition-colors">
+      
+      {/* ✨ Implemented SectionTitle here */}
+      <SectionTitle 
+        title="Restore Database" 
+        subtitle="Upload a previous backup to restore the system. Warning: This will overwrite current data. Only .json and .ndjson formats are supported."
+      />
 
-      <div className="flex flex-col gap-4">
-        {/* Styled identically to the Select dropdown in the Export component */}
-        <input 
-          type="file" 
-          accept=".json,.ndjson"
-          onChange={handleFileChange}
-          ref={fileInputRef}
-          disabled={isImporting}
-          className="p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#181818] dark:text-white text-base outline-none focus:ring-2 focus:ring-[#147bff] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#147bff]/10 file:text-[#147bff] dark:file:bg-gray-600 dark:file:text-gray-200 hover:file:bg-[#147bff]/20 dark:hover:file:bg-gray-500 file:transition-colors file:cursor-pointer"
-        />
+      {/* The Import Card */}
+      <div className="bg-[#f2f2f2] dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-[#e0e0e0] dark:border-gray-700 max-w-[450px] font-sans transition-colors duration-200 mt-6">
+        
+        <div className="flex flex-col gap-4">
+          {/* Styled identically to the Select dropdown in the Export component */}
+          <input 
+            type="file" 
+            accept=".json,.ndjson"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+            disabled={isImporting}
+            className="p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#181818] dark:text-white text-base outline-none focus:ring-2 focus:ring-[#147bff] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#147bff]/10 file:text-[#147bff] dark:file:bg-gray-600 dark:file:text-gray-200 hover:file:bg-[#147bff]/20 dark:hover:file:bg-gray-500 file:transition-colors file:cursor-pointer"
+          />
 
-        {/* Button colored exactly like the Export button */}
-        <button 
-          onClick={handleImport} 
-          disabled={isImporting || !selectedFile}
-          className={`p-3.5 rounded-lg text-white text-base font-semibold flex justify-center items-center gap-2 transition-colors ${
-            isImporting || !selectedFile 
-              ? 'bg-blue-300 dark:bg-blue-800 cursor-not-allowed' 
-              : 'bg-[#147bff] hover:bg-blue-600 cursor-pointer'
-          }`}
-        >
-          {isImporting ? (
-            <>
-              <span className="w-4 h-4 border-2 border-white border-b-transparent rounded-full animate-spin inline-block"></span>
-              Restoring Data...
-            </>
-          ) : 'Upload & Restore'}
-        </button>
+          {/* Button colored exactly like the Export button */}
+          <button 
+            onClick={handleImport} 
+            disabled={isImporting || !selectedFile}
+            className={`p-3.5 rounded-lg text-white text-base font-semibold flex justify-center items-center gap-2 transition-colors ${
+              isImporting || !selectedFile 
+                ? 'bg-blue-300 dark:bg-blue-800 cursor-not-allowed' 
+                : 'bg-[#147bff] hover:bg-blue-600 cursor-pointer'
+            }`}
+          >
+            {isImporting ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-b-transparent rounded-full animate-spin inline-block"></span>
+                Restoring Data...
+              </>
+            ) : 'Upload & Restore'}
+          </button>
+        </div>
       </div>
+      
     </div>
   );
 };
