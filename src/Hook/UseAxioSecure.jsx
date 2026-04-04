@@ -4,6 +4,7 @@ import { useContext, useEffect } from "react";
 
 const axiosSecure = axios.create({
   baseURL: `${process.env.REACT_APP_BACKEND_URL}`,
+  withCredentials: true,
 });
 
 const UseAxiosSecure = () => {
@@ -13,13 +14,8 @@ const UseAxiosSecure = () => {
     // 1. Create the request interceptor
     const requestInterceptor = axiosSecure.interceptors.request.use(
       (config) => {
-        // IMPORTANT: Make sure this key exactly matches what your Login saves!
-        // If your login saves 'token', change this from 'authToken' to 'token'.
-        const token = localStorage.getItem("authToken"); 
-        
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+        // HttpOnly Cookies are handled automatically by the browser securely.
+        // We no longer manually attach the bearer token here.
 
         // Attach user data in headers for every request
         config.headers["X-User-Email"] = user?.email || "Unknown User";

@@ -68,6 +68,7 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     refreshPreferences();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branch]);
 
   const registerUser = async (email, password, name, branch) => {
@@ -99,8 +100,8 @@ const AuthProvider = ({ children }) => {
       setBranch(data.user.branch);
       localStorage.setItem("authUser", JSON.stringify(data.user));
       localStorage.setItem("authBranch", data.user.branch);
-      localStorage.setItem("authToken", data.token);
-
+      // Removed localStorage.setItem("authToken") - Now handled natively by secure HttpOnly Cookies
+      
       return data.user;
     } catch (error) {
 
@@ -113,17 +114,19 @@ const AuthProvider = ({ children }) => {
   const logoutUser = async () => {
     setLoading(true);
     try {
-      await axiosSecure.post("/user/logout", { email: user?.email, clientIP });
+      if (user?.email) {
+        await axiosSecure.post("/user/logout", { email: user?.email, clientIP });
+      }
+    } catch (error) {
+      console.error("Logout API failed, continuing local clear", error);
+    } finally {
       setUser(null);
-      setBranch(user?.branch);
-      setChamber(null); // --- CLEAR CHAMBER ---
+      setBranch(null);
+      setChamber(null); 
       localStorage.removeItem("authUser");
       localStorage.removeItem("authBranch");
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("clientIP");
-      localStorage.removeItem("authChamber"); // --- CLEAR STORED CHAMBER ---
-    } catch (error) {
-    } finally {
+      // Keep clientIP because it's hardware tied
+      localStorage.removeItem("authChamber"); 
       setLoading(false);
     }
   };

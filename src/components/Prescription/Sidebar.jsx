@@ -128,9 +128,9 @@ export default function Sidebar({
 
   return (
     <>
-      <aside className="w-64 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 transition-colors duration-300 print:hidden relative z-40">
-        <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
-          <nav className="space-y-1 px-2">
+      <aside className="w-full xl:w-64 bg-white dark:bg-gray-800 border-b xl:border-r border-slate-200 dark:border-gray-700 flex flex-col shrink-0 transition-colors duration-300 print:hidden relative z-40 shadow-sm">
+        <div className="flex-none xl:flex-1 overflow-x-auto xl:overflow-y-auto py-2 custom-scrollbar">
+          <nav className="flex xl:flex-col space-x-2 xl:space-x-0 xl:space-y-1 px-2 min-w-max xl:min-w-0">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -138,7 +138,7 @@ export default function Sidebar({
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                  className={`flex-none xl:w-full flex items-center gap-2 xl:gap-3 px-3 py-2 xl:py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                     ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
                     : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700'
                     }`}
@@ -149,10 +149,10 @@ export default function Sidebar({
               );
             })}
 
-            <div className="mt-4 px-1">
+            <div className="mt-0 xl:mt-4 px-1 flex-none xl:flex-auto">
               <button
                 onClick={() => setActiveTab('interactions')}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border transition-colors ${activeTab === 'interactions'
+                className={`flex items-center justify-between gap-1 xl:gap-2 px-3 py-2 rounded-lg border transition-colors ${activeTab === 'interactions'
                   ? 'bg-amber-500 text-white border-amber-500'
                   : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40'
                   }`}

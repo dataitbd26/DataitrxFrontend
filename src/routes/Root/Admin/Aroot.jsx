@@ -44,7 +44,12 @@ const ARoot = () => {
 
   const contentMainClasses = `
     flex-1 flex flex-col overflow-hidden transition-all duration-300
-    ${isSidebarOpen ? "md:ml-64" : "md:ml-20"}
+    ${isSidebarOpen 
+       ? "md:ml-64" 
+       : isCreatePrescription 
+          ? "ml-0 md:ml-0" 
+          : "md:ml-20"
+    }
   `;
 
   return (

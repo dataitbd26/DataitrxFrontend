@@ -26,7 +26,6 @@ import ManageSystem from "../pages/Admin/ManageSystem";
 import WebsiteProfile from "../pages/Admin/WebsiteProfile";
 import CreatePrescription from "../pages/Admin/CreatePrescription";
 import PrescriptionTemplate from "../pages/Admin/PrescriptionTemplate";
-import Logout from "../pages/Admin/Logout";
 import AdminBlog from "../pages/Admin/Blog";
 
 
@@ -44,7 +43,6 @@ import ImportData from "../pages/Superadmin/ImportData";
 import ExportData from "../pages/Superadmin/ExportData";
 import LoginHistory from "../pages/Superadmin/LoginHistory";
 import UserActivities from "../pages/Superadmin/UserActivities";
-import SALogout from "../pages/Superadmin/Logout";
 
 import Home from "../pages/Home";
 import About from "../pages/About";
@@ -157,10 +155,6 @@ export const router = createBrowserRouter([
         element: <PermissionPrivateRoute><WebsiteProfile /></PermissionPrivateRoute>,
       },
       {
-        path: "/logout",
-        element: <PermissionPrivateRoute><Logout /></PermissionPrivateRoute>,
-      },
-      {
         path: "/admin/blog",
         element: <PermissionPrivateRoute><AdminBlog /></PermissionPrivateRoute>,
       },
@@ -230,11 +224,6 @@ export const router = createBrowserRouter([
       {
         path: "/logs/user-activities",
         element: <PrivateRoot><UserActivities /></PrivateRoot>,
-      },
-
-      {
-        path: "/sa-logout",
-        element: <PrivateRoot><SALogout /></PrivateRoot>,
       },
     ],
   },

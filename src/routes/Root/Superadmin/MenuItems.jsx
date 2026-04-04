@@ -114,7 +114,7 @@ const useMenuItems = () => {
 
     {
       title: "Logout",
-      path: "/logout",
+      action: "logout",
       icon: <MdLogout className="text-lg" />,
     },
   ];

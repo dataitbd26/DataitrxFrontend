@@ -3,18 +3,20 @@ import Sidebar from './../../components/Prescription/Sidebar';
 import PrescriptionPreview from './../../components/Prescription/PrescriptionPreview';
 import RightPanel from './../../components/Prescription/RightPanel';
 import { ICONS } from './../../components/Prescription/Icons';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useOutletContext } from 'react-router-dom';
 
 // Hooks and context
 import usePrescription from '../../Hook/usePrescription';
 import useChamber from '../../Hook/useChamber';
 import useDoctorProfile from '../../Hook/useDoctorProfile';
 import { AuthContext } from '../../providers/AuthProvider';
-import usePatient from '../../Hook/usePatient';
 
 // Import the new PDF utility and Modal
 import { generatePrescriptionPdf } from '../../components/utils/generatePrescriptionPdf';
 import AppointmentViewModal from '../../components/modal/AppointmentViewModal'; // 👈 IMPORTED MODAL
+
+import PastPrescriptionsModal from '../../components/modal/PastPrescriptionsModal';
+import PrescriptionViewModal from '../../components/modal/PrescriptionViewModal';
 
 export default function CreatePrescription() {
   const location = useLocation(); 
@@ -25,15 +27,20 @@ export default function CreatePrescription() {
   const [isExporting, setIsExporting] = useState(false); 
   
   const [isViewModalOpen, setIsViewModalOpen] = useState(false); // 👈 MODAL STATE
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // Modals specific to Prescription Search
+  const [viewingPrescription, setViewingPrescription] = useState(null);
+
+  const { toggleGlobalSidebar } = useOutletContext() || {}; // Connect to ARoot context
 
   const { branch, user } = useContext(AuthContext);
-  const { createPrescription, loading: isSaving } = usePrescription();
+  const { createPrescription, getPrescriptionsByBranch, loading: isSaving } = usePrescription();
   const { getChambersByBranch } = useChamber();
   const { getProfilesByBranch } = useDoctorProfile();
 
   const [chambers, setChambers] = useState([]);
   const [selectedChamber, setSelectedChamber] = useState(null);
   const [doctorProfile, setDoctorProfile] = useState(null);
+  const [pastPrescriptionCount, setPastPrescriptionCount] = useState(null);
 
   const [prescriptionData, setPrescriptionData] = useState({
     patient: { name: '', age: '', gender: '', phone: '', patientId: '' }, 
@@ -52,6 +59,34 @@ export default function CreatePrescription() {
     adviceText: '',
     followUp: ''
   });
+
+  // 👇 DYNAMIC HISTORY COUNTER 👇
+  useEffect(() => {
+    const phone = prescriptionData.patient?.phone;
+    const name = prescriptionData.patient?.name;
+    const searchVal = phone?.length >= 4 ? phone : (name?.length >= 3 ? name : null);
+
+    if (!searchVal || !branch || !getPrescriptionsByBranch) {
+      setPastPrescriptionCount(null);
+      return;
+    }
+
+    const fetchHistoryCount = async () => {
+      try {
+        const res = await getPrescriptionsByBranch(branch, { search: searchVal, limit: 1 });
+        if (res?.success) {
+          setPastPrescriptionCount(res.pagination?.totalItems || res.data?.length || 0);
+        } else {
+          setPastPrescriptionCount(0);
+        }
+      } catch (err) {
+        console.error("Failed to fetch past prescription count", err);
+      }
+    };
+
+    const timer = setTimeout(fetchHistoryCount, 600);
+    return () => clearTimeout(timer);
+  }, [prescriptionData.patient?.phone, prescriptionData.patient?.name, branch, getPrescriptionsByBranch]);
 
   // 👇 PRE-CHECKUP CONDITIONALS 👇
   const targetAppointmentId = incomingAppointment?._id;
@@ -119,7 +154,7 @@ export default function CreatePrescription() {
   };
 
   const handleSave = async () => {
-    const { name, patientId } = prescriptionData.patient;
+    const { patientId } = prescriptionData.patient;
     if (!prescriptionData.patient.name) {
       alert("Patient name is required!");
       return;
@@ -165,7 +200,13 @@ export default function CreatePrescription() {
 
       <header className="h-14 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0 z-20 transition-colors duration-300 print:hidden">
         <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full transition-colors text-slate-600 dark:text-gray-300">
+          <button 
+            onClick={() => {
+              if (toggleGlobalSidebar) {
+                toggleGlobalSidebar();
+              }
+            }}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full transition-colors text-slate-600 dark:text-gray-300">
             <ICONS.Menu size={20} />
           </button>
           <h1 className="font-bold text-lg text-slate-800 dark:text-gray-100">Create Prescription</h1>
@@ -173,12 +214,23 @@ export default function CreatePrescription() {
 
         <div className="flex items-center gap-3">
           
+          {/* Dynamic History Button based on valid patient phone string matching backend schema requirement */}
+          {pastPrescriptionCount !== null && pastPrescriptionCount > 0 && (
+            <button
+              onClick={() => setIsHistoryModalOpen(true)}
+              className="mr-2 px-4 py-1.5 bg-sporty-blue hover:bg-sporty-blue/90 text-concrete font-bold text-sm rounded-lg shadow-sm transition-all flex items-center gap-2 whitespace-nowrap hidden sm:flex"
+            >
+              <ICONS.History size={16} />
+              History ({pastPrescriptionCount})
+            </button>
+          )}
+
           {/* ✨ CONDITIONALLY RENDERED BUTTON ✨ */}
           {hasPreCheckup && (
             <button
               type="button"
               onClick={() => setIsViewModalOpen(true)}
-              className="mr-2 px-4 py-1.5 bg-[#0891B2] hover:bg-[#067a96] text-white font-bold text-sm rounded-lg shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
+              className="mr-2 px-4 py-1.5 bg-blue-green hover:bg-blue-green/90 text-concrete font-bold text-sm rounded-lg shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
@@ -190,7 +242,7 @@ export default function CreatePrescription() {
 
           {chambers.length > 0 && (
             <select
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-sporty-blue focus:border-sporty-blue block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               value={selectedChamber?._id || ''}
               onChange={(e) => {
                 const selected = chambers.find(c => c._id === e.target.value);
@@ -209,14 +261,14 @@ export default function CreatePrescription() {
             <button
               onClick={() => setLanguage('EN')}
               className={`px-3 py-1 text-xs font-bold rounded transition-all ${language === 'EN'
-                ? 'bg-cyan-600 text-white shadow-sm'
+                ? 'bg-sporty-blue text-concrete shadow-sm'
                 : 'text-slate-500 dark:text-gray-300 hover:text-slate-700 dark:hover:text-white'
                 }`}
             >EN</button>
             <button
               onClick={() => setLanguage('BN')}
               className={`px-3 py-1 text-xs font-bold rounded transition-all ${language === 'BN'
-                ? 'bg-cyan-600 text-white shadow-sm'
+                ? 'bg-sporty-blue text-concrete shadow-sm'
                 : 'text-slate-500 dark:text-gray-300 hover:text-slate-700 dark:hover:text-white'
                 }`}
             >BN</button>
@@ -229,7 +281,7 @@ export default function CreatePrescription() {
       </header>
 
       {/* Main Layout */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden relative">
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -244,7 +296,7 @@ export default function CreatePrescription() {
 
         {isSaving && (
           <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-50 flex items-center justify-center backdrop-blur-sm print:hidden">
-            <span className="text-cyan-600 font-bold flex items-center gap-2">
+            <span className="text-sporty-blue font-bold flex items-center gap-2">
               <span className="loading loading-spinner loading-md"></span> Saving Prescription...
             </span>
           </div>
@@ -252,7 +304,7 @@ export default function CreatePrescription() {
 
         {isExporting && (
           <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-50 flex items-center justify-center backdrop-blur-sm print:hidden">
-            <span className="text-cyan-600 font-bold flex items-center gap-2">
+            <span className="text-sporty-blue font-bold flex items-center gap-2">
               <span className="loading loading-spinner loading-md"></span> Generating PDF...
             </span>
           </div>
@@ -274,6 +326,30 @@ export default function CreatePrescription() {
         onClose={() => setIsViewModalOpen(false)}
         appointmentId={targetAppointmentId}
       />
+      
+      {/* Historical Prescriptions Engine Sub-Flow */}
+      <PastPrescriptionsModal 
+          isOpen={isHistoryModalOpen} 
+          onClose={() => setIsHistoryModalOpen(false)} 
+          patientPhone={prescriptionData.patient?.phone || prescriptionData.patient?.name} 
+          patientName={prescriptionData.patient?.name}
+          onSelectPrescription={(p) => {
+              setViewingPrescription(p);
+              setIsHistoryModalOpen(false); // Close the history list so they can view the selected document natively 
+          }} 
+      />
+
+      <PrescriptionViewModal 
+          isOpen={!!viewingPrescription} 
+          onClose={() => {
+              setViewingPrescription(null);
+              setIsHistoryModalOpen(true); // Return back to the parent list index 
+          }} 
+          prescriptionData={viewingPrescription} 
+          doctorProfile={doctorProfile} 
+          chamber={selectedChamber} 
+      />
+
     </div>
   );
 }

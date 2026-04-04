@@ -4,7 +4,7 @@ import { HiPlus, HiPencilSquare, HiTrash, HiMagnifyingGlass } from "react-icons/
 import useLabtest from '../../Hook/useLabtest';
 import useLabTestDept from '../../Hook/useLabTestDept';
 import LabtestFormModal from '../../components/modal/LabtestFormModal';
-import ConfirmDeleteModal from '../../components/modal/MedicineManufacturerFormModal';
+import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import Pagination from '../../components/common/Pagination';
 import SectionTitle from '../../components/common/SectionTitle';
 
@@ -13,7 +13,7 @@ const TestList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState(''); // ADDED: Status filter state
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [page, setPage] = useState(1);
 
   // Data State

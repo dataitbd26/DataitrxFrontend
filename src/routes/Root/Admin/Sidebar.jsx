@@ -22,7 +22,7 @@ const SidebarSkeleton = ({ isSidebarOpen }) => (
     </div>
 );
 
-const AccordionItem = ({ item, isSidebarOpen, mode }) => {
+const AccordionItem = ({ item, isSidebarOpen, mode, logoutUser }) => {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
 
@@ -75,6 +75,20 @@ const AccordionItem = ({ item, isSidebarOpen, mode }) => {
             </li>
         );
     }
+    
+    if (item.action === 'logout') {
+        return (
+            <li>
+                <button 
+                    onClick={logoutUser}
+                    className={`w-full ${getLinkClasses('')}`}
+                >
+                    {item.icon}
+                    {isSidebarOpen && <span className="font-medium text-sm">{item.title}</span>}
+                </button>
+            </li>
+        );
+    }
 
     return (
         <li>
@@ -87,8 +101,8 @@ const AccordionItem = ({ item, isSidebarOpen, mode }) => {
 };
 
 const Sidebar = ({ isSidebarOpen, toggleSidebar, mode }) => {
-
-    const { user } = useContext(AuthContext);
+    const location = useLocation();
+    const { user, logoutUser } = useContext(AuthContext);
     const { allowedRoutes, loading: permissionsLoading } = useUserPermissions();
     const allItems = useMenuItems();
 
@@ -111,12 +125,16 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, mode }) => {
         }, []);
     }, [allowedRoutes, permissionsLoading, allItems, user]);
 
+    const isCreatePrescription = location.pathname === '/create-prescription';
+
     const sidebarClasses = `
         fixed top-0 left-0 h-full shadow-lg z-30 transition-all duration-300 flex flex-col
         bg-base-100 dark:bg-gray-800 
         ${isSidebarOpen
             ? 'w-64 translate-x-0'
-            : 'w-64 -translate-x-full md:w-20 md:translate-x-0'
+            : isCreatePrescription 
+               ? '-translate-x-full w-0 overflow-hidden' 
+               : 'w-64 -translate-x-full md:w-20 md:translate-x-0'
         }
     `;
 
@@ -148,6 +166,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, mode }) => {
                                     item={item}
                                     isSidebarOpen={isSidebarOpen}
                                     mode={mode}
+                                    logoutUser={logoutUser}
                                 />
                             ))}
                         </ul>

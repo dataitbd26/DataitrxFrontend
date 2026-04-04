@@ -46,7 +46,7 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
   };
 
   return (
-    <div className="bg-slate-100 dark:bg-gray-900 flex-1 overflow-y-auto p-4 md:p-8 flex justify-center print:p-0 print:bg-white transition-colors duration-300 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] print:overflow-visible print:h-auto">
+    <div className="bg-slate-100 dark:bg-gray-900 flex-1 overflow-y-auto overflow-x-auto p-4 md:p-8 flex justify-center print:p-0 print:bg-white transition-colors duration-300 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] print:overflow-visible print:h-auto">
       
       {/* ✨ NEW: CSS Print Rules to override parent app constraints and enable proper pagination ✨ */}
       <style>
@@ -145,6 +145,11 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
                   {data.vitals.temp && <div>Temp: {data.vitals.temp} °F</div>}
                   {data.vitals.weight && <div>Weight: {data.vitals.weight} kg</div>}
                   {data.vitals.height && <div>Height: {data.vitals.height} cm</div>}
+                  {data.vitals.bmi && <div>BMI: {data.vitals.bmi} kg/m²</div>}
+                  {data.vitals.waist && <div>Waist: {data.vitals.waist} cm</div>}
+                  {data.vitals.hip && <div>Hip: {data.vitals.hip} cm</div>}
+                  {data.vitals.whr && <div>W/H Ratio: {data.vitals.whr}</div>}
+                  {data.vitals.bodyFat && <div>Body Fat: {data.vitals.bodyFat}%</div>}
                   {data.vitals.spo2 && <div>SpO2: {data.vitals.spo2} %</div>}
                 </div>
               </div>

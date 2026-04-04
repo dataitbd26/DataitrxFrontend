@@ -215,7 +215,7 @@ export default function RightPanel({ activeTab, data, updateData, language }) {
 
   return (
     // ✨ ADDED print:hidden to the className string below!
-    <aside className="w-96 bg-white dark:bg-gray-800 border-l border-slate-200 dark:border-gray-700 flex flex-col h-full shrink-0 shadow-xl shadow-slate-200/50 dark:shadow-none z-10 transition-colors duration-300 print:hidden">
+    <aside className="w-full xl:w-96 bg-white dark:bg-gray-800 border-t xl:border-l xl:border-t-0 border-slate-200 dark:border-gray-700 flex flex-col xl:h-full shrink-0 shadow-xl shadow-slate-200/50 dark:shadow-none z-10 transition-colors duration-300 print:hidden min-h-[500px]">
       <SectionHeader
         icon={getIcon()}
         title={dict[language][activeTab] || activeTab.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
