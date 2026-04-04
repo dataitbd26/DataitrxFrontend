@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
+import dayjs from 'dayjs';
 import UseAxiosSecure from '../../Hook/UseAxioSecure';
 import { AuthContext } from '../../providers/AuthProvider';
 import {
@@ -75,14 +76,10 @@ const BranchDashboard = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
+    return dayjs(dateString).format('MMM D, hh:mm A');
   };
 
-  const todayDateStr = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
+  const todayDateStr = dayjs().format('dddd, MMMM D, YYYY');
 
   const getAvatarInitials = (name) => {
     if (!name) return "DR";

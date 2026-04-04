@@ -1,5 +1,6 @@
 // TransactionLogTable.jsx
 import React, { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
 import { useTransactionLogs } from '../../Hook/useTransactionLogs';
 import SectionTitle from "../../components/common/SectionTitle";
@@ -84,10 +85,7 @@ const TransactionLogTable = () => {
   // 5. Helper Functions
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
+    return dayjs(dateString).format('MMM D, YYYY, hh:mm A');
   };
 
   const getStatusBadge = (status) => {

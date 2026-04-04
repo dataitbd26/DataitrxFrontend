@@ -4,17 +4,13 @@ import useAppointment from '../../Hook/useAppointment';
 import useChamber from '../../Hook/useChamber';
 import usePatient from '../../Hook/usePatient';
 import { AuthContext } from '../../providers/AuthProvider';
+import dayjs from 'dayjs';
 
 // Helper function to add minutes to a HH:mm time string
 const addMinutesToTime = (timeStr, minsToAdd) => {
     if (!timeStr) return '';
     const [hours, minutes] = timeStr.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    date.setMinutes(date.getMinutes() + minsToAdd);
-    const newHours = String(date.getHours()).padStart(2, '0');
-    const newMins = String(date.getMinutes()).padStart(2, '0');
-    return `${newHours}:${newMins}`;
+    return dayjs().hour(hours).minute(minutes).add(minsToAdd, 'minute').format('HH:mm');
 };
 
 const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, currentBranch }) => {
@@ -33,15 +29,13 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
     const [isHoliday, setIsHoliday] = useState(false);
 
     // Helper to get today's date in YYYY-MM-DD format
-    const getTodayDate = () => new Date().toISOString().split('T')[0];
+    const getTodayDate = () => dayjs().format('YYYY-MM-DD');
 
     // Helper to format an incoming date to DD/MM/YYYY
     const formatToDDMMYYYY = (dateString) => {
         if (!dateString) return '';
         try {
-            const isoDate = new Date(dateString).toISOString().split('T')[0];
-            const [yyyy, mm, dd] = isoDate.split('-');
-            return `${dd}/${mm}/${yyyy}`;
+            return dayjs(dateString).format('DD/MM/YYYY');
         } catch (e) {
             return '';
         }
@@ -85,7 +79,7 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
                 bloodGroup: appointment.patientId?.bloodGroup || '',
                 address: appointment.patientId?.address || '',
                 chamberId: appointment.chamberId?._id || appointment.chamberId || '',
-                appointmentDate: appointment.appointmentDate ? new Date(appointment.appointmentDate).toISOString().split('T')[0] : getTodayDate(),
+                appointmentDate: appointment.appointmentDate ? dayjs(appointment.appointmentDate).format('YYYY-MM-DD') : getTodayDate(),
                 appointmentTime: appointment.appointmentTime || '',
                 patientType: appointment.patientType || 'New Patient',
             });
@@ -117,9 +111,9 @@ const AppointmentFormModal = ({ isOpen, onClose, appointment, onSuccess, current
             const chamber = chambers.find(c => c._id === formData.chamberId);
             setSelectedChamberDetails(chamber);
 
-            const dateObj = new Date(formData.appointmentDate);
+            const dateObj = dayjs(formData.appointmentDate);
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const dayName = days[dateObj.getDay()];
+            const dayName = days[dateObj.day()];
             const todaySchedule = chamber?.schedule?.find(s => s.day === dayName);
 
             if (todaySchedule?.isHoliday) {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import dayjs from 'dayjs';
 import SectionTitle from "../../components/common/SectionTitle";
 
 const DatabaseExportButton = () => {
@@ -28,7 +29,7 @@ const DatabaseExportButton = () => {
       let extension = format;
       if (format === 'csv') extension = 'zip'; 
       
-      const dateString = new Date().toISOString().split('T')[0];
+      const dateString = dayjs().format('YYYY-MM-DD');
       link.download = `db_backup_${dateString}.${extension}`;
       
       document.body.appendChild(link);

@@ -5,6 +5,7 @@ import usePreCheckup from '../../Hook/usePreCheckup';
 import useChamber from '../../Hook/useChamber';
 import usePatient from '../../Hook/usePatient';
 import Swal from 'sweetalert2';
+import dayjs from 'dayjs';
 
 const PreCheckupFormModal = ({ isOpen, onClose, preCheckup, onSuccess, branch }) => {
     // Stage Management: 1 = Lookup, 2 = Form Entry
@@ -21,7 +22,7 @@ const PreCheckupFormModal = ({ isOpen, onClose, preCheckup, onSuccess, branch })
     const [searchAppId, setSearchAppId] = useState('');
     const [searchPhone, setSearchPhone] = useState('');
     const [searchChamber, setSearchChamber] = useState('');
-    const [searchDate, setSearchDate] = useState(new Date().toISOString().split('T')[0]);
+    const [searchDate, setSearchDate] = useState(dayjs().format('YYYY-MM-DD'));
 
     const [lookupResults, setLookupResults] = useState([]);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -388,7 +389,7 @@ const PreCheckupFormModal = ({ isOpen, onClose, preCheckup, onSuccess, branch })
                                                         </div>
                                                     </td>
                                                     <td>{appt.patientId?.phone || '-'}</td>
-                                                    <td className="text-xs">{new Date(appt.appointmentDate).toISOString().split('T')[0]}</td>
+                                                    <td className="text-xs">{dayjs(appt.appointmentDate).format('YYYY-MM-DD')}</td>
                                                     <td>
                                                         <button disabled={appt.preCheckupId && appt.preCheckupId !== preCheckup?._id} onClick={() => confirmSelection(appt)} className="btn btn-xs outline outline-1 outline-sporty-blue text-sporty-blue bg-transparent hover:bg-sporty-blue hover:text-white">
                                                             {appt.preCheckupId && appt.preCheckupId !== preCheckup?._id ? 'Already Done' : 'Select'}

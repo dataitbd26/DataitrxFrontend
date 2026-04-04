@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../providers/AuthProvider';
 import SectionTitle from '../../components/common/SectionTitle';
+import useSystemPreference from '../../Hook/useSystemPreference';
 
 // Dynamic Timezone Data from your assets folder
 import timezonesData from './../../assets/Json/Timezone.json';
 
 const SystemPreferences = () => {
-  const { branch } = useContext(AuthContext);
+  const { branch, refreshPreferences } = useContext(AuthContext);
+  const { getPreferenceByBranch, upsertPreference } = useSystemPreference();
   const [isSaving, setIsSaving] = useState(false);
 
   // Form State
@@ -19,8 +21,15 @@ const SystemPreferences = () => {
   });
 
   useEffect(() => {
-    // TODO: Fetch settings from your API and update state
-    // fetchBranchSettings(branch).then(data => setFormData(data));
+    if (branch) {
+      getPreferenceByBranch(branch)
+        .then(res => {
+          if (res?.data) {
+            setFormData(prev => ({ ...prev, ...res.data }));
+          }
+        })
+        .catch(err => console.error("Failed to fetch settings:", err));
+    }
   }, [branch]);
 
   const handleChange = (e) => {
@@ -33,11 +42,15 @@ const SystemPreferences = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!branch) {
+      alert("No branch selected. Cannot save preferences.");
+      return;
+    }
     setIsSaving(true);
     try {
       console.log("Saving preferences:", formData);
-      // await updateBranchSettings(branch, formData);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await upsertPreference(branch, formData);
+      await refreshPreferences(); // Sync the context and timezone dynamically
       alert("Settings saved successfully!");
     } catch (error) {
       console.error("Failed to save settings:", error);

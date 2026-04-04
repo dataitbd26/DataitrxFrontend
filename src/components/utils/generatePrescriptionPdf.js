@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import domtoimage from 'dom-to-image';
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 export const generatePrescriptionPdf = async (elementId, patientName) => {
     const element = document.getElementById(elementId);
@@ -49,7 +49,7 @@ export const generatePrescriptionPdf = async (elementId, patientName) => {
 
         // Generate filename
         const safeName = patientName ? patientName.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'patient';
-        const dateStr = moment().format('YYYY-MM-DD');
+        const dateStr = dayjs().format('YYYY-MM-DD');
 
         // Download the PDF
         pdf.save(`Prescription_${safeName}_${dateStr}.pdf`);

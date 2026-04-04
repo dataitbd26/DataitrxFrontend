@@ -1,4 +1,5 @@
 import React from 'react';
+import dayjs from 'dayjs';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; // Don't forget the CSS!
 import { useUserLogs } from '../../Hook/useUserLogs'; 
@@ -10,10 +11,7 @@ const UserLogTable = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
+    return dayjs(dateString).format('MMM D, YYYY, hh:mm A');
   };
 
   // NEW: Wrapper function to handle the Confirm window and Toast notifications

@@ -3,6 +3,14 @@ import PropTypes from "prop-types";
 
 import useAxiosPublic from "../Hook/useAxiosPublic";
 
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+// Configure dayjs plugins globally
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 export const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
@@ -41,6 +49,26 @@ const AuthProvider = ({ children }) => {
       fetchClientIP();
     }
   }, [clientIP]);
+
+  const [systemPreferences, setSystemPreferences] = useState(null);
+
+  const refreshPreferences = async () => {
+    if (branch && axiosSecure) {
+      try {
+        const res = await axiosSecure.get(`/system-preferences/${branch}`);
+        if (res?.data?.data?.timezone) {
+          setSystemPreferences(res.data.data);
+          dayjs.tz.setDefault(res.data.data.timezone);
+        }
+      } catch (err) {
+        console.error("Failed to load global preferences", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    refreshPreferences();
+  }, [branch]);
 
   const registerUser = async (email, password, name, branch) => {
     setLoading(true);
@@ -106,6 +134,8 @@ const AuthProvider = ({ children }) => {
     branch,
     chamber, // --- EXPOSED CHAMBER ---
     clientIP,
+    systemPreferences,
+    refreshPreferences,
     registerUser,
     loginUser,
     logoutUser,

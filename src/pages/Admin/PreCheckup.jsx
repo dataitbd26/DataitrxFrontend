@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
+import dayjs from 'dayjs';
 import { HiPlus, HiPencilSquare, HiTrash, HiMagnifyingGlass, HiClipboardDocumentList } from "react-icons/hi2";
 import { AuthContext } from '../../providers/AuthProvider';
 import usePreCheckup from '../../Hook/usePreCheckup';
@@ -164,7 +165,7 @@ const PreCheckup = () => {
                       <td>
                         <div className="text-sm">
                           <div className="font-medium text-sporty-blue">ID: {pc.appointmentId?.appointmentId || 'Walk-in/Unknown'}</div>
-                          <div className="opacity-50 text-xs">{pc.appointmentId?.appointmentDate ? new Date(pc.appointmentId.appointmentDate).toLocaleDateString() : '-'}</div>
+                          <div className="opacity-50 text-xs">{pc.appointmentId?.appointmentDate ? dayjs(pc.appointmentId.appointmentDate).format('MMM D, YYYY') : '-'}</div>
                         </div>
                       </td>
                       <td>
@@ -185,7 +186,7 @@ const PreCheckup = () => {
                         </div>
                       </td>
                       <td className="text-xs opacity-70">
-                        {new Date(pc.createdAt).toLocaleDateString()}
+                        {dayjs(pc.createdAt).format('MMM D, YYYY')}
                       </td>
                       <td className="text-center">
                         <div className="join">

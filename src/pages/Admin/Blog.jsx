@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
+import dayjs from 'dayjs';
 import { HiPlus, HiPencilSquare, HiTrash, HiMagnifyingGlass } from "react-icons/hi2";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { AuthContext } from '../../providers/AuthProvider';
@@ -286,11 +287,7 @@ const Blog = () => {
                                         </td>
                                         <td>
                                             <span className="text-sm">
-                                                {new Date(post.date).toLocaleDateString('en-US', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                })}
+                                                {dayjs(post.date).format('MMMM D, YYYY')}
                                             </span>
                                         </td>
                                         <td className="capitalize">

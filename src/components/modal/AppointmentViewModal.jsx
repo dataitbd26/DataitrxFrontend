@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 import useAppointment from '../../Hook/useAppointment';
 import { HiXMark } from "react-icons/hi2";
 
@@ -48,7 +49,7 @@ const AppointmentViewModal = ({ isOpen, onClose, appointmentId }) => {
                                     <div className="grid grid-cols-2 gap-y-2 text-sm">
                                         <p><strong className="text-gray-500 dark:text-gray-400">ID:</strong> {appointmentData.appointmentId}</p>
                                         <p><strong className="text-gray-500 dark:text-gray-400">Serial:</strong> {appointmentData.serial}</p>
-                                        <p><strong className="text-gray-500 dark:text-gray-400">Date:</strong> {appointmentData.appointmentDate ? new Date(appointmentData.appointmentDate).toLocaleDateString() : 'N/A'}</p>
+                                        <p><strong className="text-gray-500 dark:text-gray-400">Date:</strong> {appointmentData.appointmentDate ? dayjs(appointmentData.appointmentDate).format('MMM D, YYYY') : 'N/A'}</p>
                                         <p><strong className="text-gray-500 dark:text-gray-400">Time:</strong> {appointmentData.appointmentTime}</p>
                                         <p><strong className="text-gray-500 dark:text-gray-400">Type:</strong> {appointmentData.patientType}</p>
                                         <p><strong className="text-gray-500 dark:text-gray-400">Payment:</strong> <span className={`${appointmentData.paymentStatus === 'Collect' ? 'text-green-600 font-medium' : ''}`}>{appointmentData.paymentStatus}</span></p>

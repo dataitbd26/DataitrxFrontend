@@ -8,6 +8,7 @@ import {
     HiDocumentText
 } from "react-icons/hi2";
 import { useNavigate } from 'react-router-dom'; // 👈 ADD THIS IMPORT
+import dayjs from 'dayjs';
 import useAppointment from '../../Hook/useAppointment';
 import useChamber from '../../Hook/useChamber';
 import AppointmentFormModal from '../../components/modal/AppointmentFormModal';
@@ -22,11 +23,7 @@ import Swal from 'sweetalert2';
 const Appointments = () => {
     // Helper to get today's date in YYYY-MM-DD format for the date input
     const getTodayDateString = () => {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
+        return dayjs().format('YYYY-MM-DD');
     };
 
     const navigate = useNavigate(); // 👈 INIT NAVIGATE
@@ -391,7 +388,7 @@ const Appointments = () => {
                                         </td>
                                         <td className="text-gray-500 italic">{appt.chamberId?.chamberName || 'Default'}</td>
                                         <td>
-                                            <div>{new Date(appt.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                            <div>{dayjs(appt.appointmentDate).format('MMM D, YYYY')}</div>
                                             <div className="text-xs text-gray-500">{appt.appointmentTime}</div>
                                         </td>
                                         <td>
@@ -426,7 +423,7 @@ const Appointments = () => {
                                         </td>
 
                                         <td className="text-xs text-gray-500">
-                                            {new Date(appt.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}
+                                            {dayjs(appt.createdAt).format('MMM D, YYYY, h:mm A')}
                                         </td>
                                         <td>
                                             <div className="flex gap-1">

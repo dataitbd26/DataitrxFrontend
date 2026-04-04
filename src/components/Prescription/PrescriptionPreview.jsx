@@ -1,11 +1,8 @@
 import React from 'react';
+import dayjs from 'dayjs';
 
 export default function PrescriptionPreview({ data, language, doctor, chamber }) {
-  const today = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const today = dayjs().format('MMM D, YYYY');
 
   const dict = {
     EN: {

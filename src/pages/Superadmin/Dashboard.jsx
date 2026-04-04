@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import dayjs from 'dayjs';
 import UseAxiosSecure from '../../Hook/UseAxioSecure';
 import SectionTitle from '../../components/common/SectionTitle';
 import {
@@ -45,9 +46,7 @@ const Dashboard = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
+    return dayjs(dateString).format('MMM D, hh:mm A');
   };
 
   return (
