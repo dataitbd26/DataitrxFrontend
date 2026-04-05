@@ -16,6 +16,7 @@ const SystemPreferences = () => {
     timezone: 'Asia/Dhaka',
     printWithoutHeaderFooter: false,
     autoSendEmail: false,
+    autoSendSmsReminder: false,
     prescriptionHeaderSize: 150,
     prescriptionFooterSize: 100,
   });
@@ -190,7 +191,7 @@ const SystemPreferences = () => {
             </svg>
             <h3 className="text-lg font-bold text-casual-black dark:text-concrete">Automation</h3>
           </div>
-          <div className="form-control">
+          <div className="form-control mb-4">
             <label className="cursor-pointer label justify-start gap-4 p-0">
               <input
                 type="checkbox"
@@ -202,6 +203,22 @@ const SystemPreferences = () => {
               <div>
                 <span className="label-text block font-medium text-casual-black dark:text-concrete">Automatic Email Dispatch</span>
                 <span className="label-text-alt text-casual-black/60 dark:text-concrete/60">Automatically send the PDF prescription to the patient's email upon saving.</span>
+              </div>
+            </label>
+          </div>
+
+          <div className="form-control">
+            <label className="cursor-pointer label justify-start gap-4 p-0">
+              <input
+                type="checkbox"
+                name="autoSendSmsReminder"
+                checked={formData.autoSendSmsReminder}
+                onChange={handleChange}
+                className="toggle toggle-primary bg-sporty-blue border-sporty-blue hover:bg-sporty-blue/90"
+              />
+              <div>
+                <span className="label-text block font-medium text-casual-black dark:text-concrete">Next Appointment SMS Reminder</span>
+                <span className="label-text-alt text-casual-black/60 dark:text-concrete/60">Automatically dispatch an SMS reminder to the patient 1 day prior to their next calculated visit.</span>
               </div>
             </label>
           </div>

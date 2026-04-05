@@ -1,8 +1,18 @@
 import React from 'react';
 import dayjs from 'dayjs';
+import Barcode from 'react-barcode';
 
 export default function PrescriptionPreview({ data, language, doctor, chamber }) {
   const today = dayjs().format('MMM D, YYYY');
+
+  let calculatedNextVisit = '';
+  if (data.followUp) {
+    const amount = parseInt(data.followUp, 10);
+    const unit = data.followUpUnit === 'months' ? 'month' : 'day';
+    if (!isNaN(amount)) {
+      calculatedNextVisit = dayjs().add(amount, unit).format('DD MMMM YYYY');
+    }
+  }
 
   const dict = {
     EN: {
@@ -33,21 +43,61 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
     const activeDays = scheduleArray.filter(day => !day.isHoliday);
     if (activeDays.length === 0) return 'Currently Unavailable';
 
+    const orderedDays = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
     const timeGroups = {};
+
     activeDays.forEach(day => {
       const timeStr = `${day.startTime || ''} - ${day.endTime || ''}`;
       if (!timeGroups[timeStr]) timeGroups[timeStr] = [];
-      timeGroups[timeStr].push(day.day.substring(0, 3)); 
+      const shortDay = day.day.substring(0, 3);
+      if (!timeGroups[timeStr].includes(shortDay)) {
+        timeGroups[timeStr].push(shortDay);
+      }
     });
 
-    return Object.entries(timeGroups)
-      .map(([time, days]) => `${days.join(', ')} (${time})`)
-      .join(' | ');
+    const groupDays = (daysArray) => {
+      const sorted = [...daysArray].sort((a, b) => orderedDays.indexOf(a) - orderedDays.indexOf(b));
+      const ranges = [];
+      let start = sorted[0];
+      let prevIdx = orderedDays.indexOf(sorted[0]);
+
+      for (let i = 1; i <= sorted.length; i++) {
+        const curr = sorted[i];
+        const currIdx = orderedDays.indexOf(curr);
+
+        if (i === sorted.length || currIdx !== prevIdx + 1) {
+          const end = sorted[i - 1];
+          if (start === end) {
+            ranges.push(start);
+          } else if (orderedDays.indexOf(end) - orderedDays.indexOf(start) === 1) {
+            ranges.push(`${start}, ${end}`);
+          } else {
+            ranges.push(`${start}-${end}`);
+          }
+          if (i < sorted.length) {
+            start = curr;
+            prevIdx = currIdx;
+          }
+        } else {
+          prevIdx = currIdx;
+        }
+      }
+      return ranges.join(', ');
+    };
+
+    const groups = Object.entries(timeGroups).map(([time, days]) => `${groupDays(days)} (${time})`);
+
+    return groups.map((group, index) => (
+      <React.Fragment key={index}>
+        {index > 0 && <br />}
+        {group}
+      </React.Fragment>
+    ));
   };
 
   return (
     <div className="bg-slate-100 dark:bg-gray-900 flex-1 overflow-y-auto overflow-x-auto p-4 md:p-8 flex justify-center print:p-0 print:bg-white transition-colors duration-300 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] print:overflow-visible print:h-auto">
-      
+
       {/* ✨ NEW: CSS Print Rules to override parent app constraints and enable proper pagination ✨ */}
       <style>
         {`
@@ -69,18 +119,11 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
       </style>
 
       {/* Changed print:h-full to print:h-auto so it can expand to multiple pages natively */}
-      <div id="prescription-preview" className="bg-white w-full max-w-[210mm] min-h-[297mm] shadow-lg p-10 flex flex-col relative print:shadow-none print:w-full print:h-auto print:min-h-0 text-slate-900 mx-auto">
+      <div id="prescription-preview" className="bg-white shrink-0 w-[794px] min-w-[794px] max-w-none min-h-[1123px] shadow-lg p-10 flex flex-col relative print:shadow-none print:w-full print:min-w-0 print:h-auto print:min-h-0 text-slate-900 mx-auto">
 
         {/* Header / Logo Area */}
-        <div id="prescription-header" className="hidden print:flex justify-between items-start mb-6 pb-6 border-b-2 border-slate-800 break-inside-avoid">
-          <div className="flex items-start gap-6 max-w-[60%]">
-            {doctor?.doctorPicture ? (
-              <img src={doctor.doctorPicture} alt="Doctor" crossOrigin="anonymous" className="w-20 h-20 object-cover rounded-lg shrink-0 border border-slate-200" />
-            ) : (
-              <div className="w-20 h-20 bg-slate-100 flex items-center justify-center rounded-lg uppercase text-sm font-bold text-slate-400 tracking-wider shrink-0 border border-slate-200">
-                LOGO
-              </div>
-            )}
+        <div id="prescription-header" className="flex justify-between items-start mb-6 pb-6 border-b-2 border-slate-800 break-inside-avoid">
+          <div className="flex items-start max-w-[60%]">
             <div className="text-left">
               <h2 className="text-2xl font-bold uppercase text-slate-800 m-0 mb-1">
                 {doctor?.name || 'Doctor Name'}
@@ -96,35 +139,39 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
               </p>
             </div>
           </div>
-          <div className="text-right max-w-[40%]">
-            <h3 className="text-lg font-bold text-slate-800 m-0 mb-1">
-              {chamber?.chamberName || 'Chamber Name'}
-            </h3>
-            <p className="text-sm text-slate-700 m-0 mb-1 whitespace-pre-line">
-              {chamber?.address || 'Chamber Address'}
-            </p>
-            <p className="text-sm text-slate-700 m-0 mb-1">
-              <strong>Phone:</strong> {chamber?.mobileNumber || 'N/A'}
-            </p>
-            <p className="text-sm text-slate-700 m-0">
-              <strong>Visiting Hours:</strong> {formatSchedule(chamber?.schedule)}
-            </p>
+          <div className="text-right max-w-[40%] flex flex-col items-end">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800 m-0 mb-1">
+                {chamber?.chamberName || 'Chamber Name'}
+              </h3>
+              <p className="text-sm text-slate-700 m-0 mb-1 whitespace-pre-line">
+                {chamber?.address || 'Chamber Address'}
+              </p>
+              <p className="text-sm text-slate-700 m-0 mb-1">
+                <strong>Phone:</strong> {chamber?.mobileNumber || 'N/A'}
+              </p>
+              <p className="text-sm text-slate-700 m-0">
+                <strong>Visiting Hours:</strong> {formatSchedule(chamber?.schedule)}
+              </p>
+            </div>
+
+
           </div>
         </div>
 
         {/* Patient Info Bar */}
         <div className="border-b-2 border-slate-800 pb-3 mb-6 break-inside-avoid">
-          <div className="grid grid-cols-4 gap-4 text-sm font-bold text-slate-900">
-            <div className="flex gap-1 items-baseline">
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm font-bold text-slate-900">
+            <div className="flex gap-1 items-baseline flex-1 min-w-[150px]">
               {t.name}: <span className="font-normal ml-1 border-b border-dotted border-slate-400 grow min-w-[50px]">{data.patient.name}</span>
             </div>
-            <div className="flex gap-1 items-baseline">
-              {t.age}: <span className="font-normal ml-1 border-b border-dotted border-slate-400 grow min-w-[30px]">{data.patient.age}</span>
+            <div className="flex gap-1 items-baseline whitespace-nowrap">
+              {t.age}: <span className="font-normal ml-1 border-b border-dotted border-slate-400 min-w-[30px] text-center">{data.patient.age}</span>
             </div>
-            <div className="flex gap-1 items-baseline">
-              {t.gender}: <span className="font-normal ml-1 border-b border-dotted border-slate-400 grow min-w-[30px]">{data.patient.gender}</span>
+            <div className="flex gap-1 items-baseline whitespace-nowrap">
+              {t.gender}: <span className="font-normal ml-1 border-b border-dotted border-slate-400 min-w-[40px] text-center">{data.patient.gender}</span>
             </div>
-            <div className="flex gap-1 items-baseline justify-end">
+            <div className="flex gap-1 items-baseline whitespace-nowrap justify-end">
               {t.date}: <span className="font-normal ml-1 text-slate-600">{today}</span>
             </div>
           </div>
@@ -134,7 +181,7 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
         <div className="flex-1 flex gap-8 print:h-auto print:overflow-visible">
           {/* Left Column */}
           <div className="w-1/3 border-r border-slate-200 pr-6 flex flex-col gap-6">
-            
+
             {/* ✨ ADDED 'break-inside-avoid' to all sections to prevent bad page splits ✨ */}
             {(data.vitals.bp || data.vitals.weight || data.vitals.pulse || data.vitals.temp) && (
               <div className="text-sm break-inside-avoid">
@@ -197,6 +244,12 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
                 <ul className="list-disc list-inside text-slate-700 space-y-0.5">
                   {data.investigations.map((inv, i) => <li key={i}>{inv}</li>)}
                 </ul>
+                
+                {data.investigationsDiscount && (
+                  <div className="mt-3 text-xs font-bold text-slate-800 bg-slate-100 border border-slate-300 px-3 py-1.5 inline-block rounded uppercase tracking-wide">
+                    Discount Requested: {data.investigationsDiscount}
+                  </div>
+                )}
               </div>
             )}
 
@@ -252,18 +305,25 @@ export default function PrescriptionPreview({ data, language, doctor, chamber })
 
         {/* Footer */}
         {/* ✨ ADDED 'break-inside-avoid print:mt-10' to ensure signature is never split onto a new page alone ✨ */}
-        <div className="mt-auto border-t border-slate-200 pt-8 flex justify-between items-end break-inside-avoid print:mt-10">
-          <div className="text-sm font-bold flex flex-col items-start gap-1">
-             <div className="flex items-baseline gap-2">
-                 {t.nextVisit}: <span className="w-32 border-b border-slate-400 inline-block"></span>
-             </div>
-             <div className="text-slate-600 mt-2 font-normal">
-                 {t.date}: {today}
-             </div>
+        <div className="mt-auto border-t border-slate-200 pt-8 flex justify-between items-end break-inside-avoid print:mt-10 relative">
+          <div className="text-sm font-bold flex flex-row items-baseline gap-8 min-w-[150px]">
+            {data.followUp && calculatedNextVisit ? (
+              <div className="flex items-baseline gap-1 whitespace-nowrap text-slate-900 uppercase">
+                {t.nextVisit}: <span className="font-normal tracking-wide">{calculatedNextVisit}</span>
+              </div>
+            ) : null}
           </div>
+
+          {/* Centered Barcode */}
+          {data.prescriptionId && (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-0 flex flex-col items-center">
+              <Barcode value={data.prescriptionId} width={1.2} height={32} fontSize={11} displayValue={true} margin={0} background="transparent" />
+            </div>
+          )}
+
           <div className="text-right flex flex-col items-end">
             {doctor?.signature ? (
-              <img src={doctor.signature} alt="Signature" crossOrigin="anonymous" className="h-12 mb-1 object-contain" />
+              <img src={doctor.signature} alt="Signature" className="h-12 mb-1 object-contain" />
             ) : (
               <div className="w-40 border-b border-slate-400 mb-2"></div>
             )}

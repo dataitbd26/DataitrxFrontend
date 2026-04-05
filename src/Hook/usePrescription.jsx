@@ -146,6 +146,28 @@ const usePrescription = (initialParams = null) => {
         [axiosSecure]
     );
 
+    const getPrescriptionStats = useCallback(
+        async (branch) => {
+            setLoading(true);
+            setError(null);
+            try {
+                const { data } = await axiosSecure.get(`/prescriptions/${branch}/prescription-stats`);
+                setResponse(data);
+                return data;
+            } catch (err) {
+                const message =
+                    err.response?.data?.error ||
+                    err.response?.data?.message ||
+                    err.message;
+                setError(message);
+                throw err;
+            } finally {
+                setLoading(false);
+            }
+        },
+        [axiosSecure]
+    );
+
     useEffect(() => {
         if (initialParams) {
             getAllPrescriptions(initialParams);
@@ -160,6 +182,7 @@ const usePrescription = (initialParams = null) => {
         error,
         getAllPrescriptions,
         getPrescriptionsByBranch,
+        getPrescriptionStats,
         getPrescriptionById,
         createPrescription,
         updatePrescription,

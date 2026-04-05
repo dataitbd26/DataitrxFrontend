@@ -3,6 +3,7 @@ import { ICONS } from './Icons';
 import { FileText } from 'lucide-react';
 import { FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import { HiXMark } from 'react-icons/hi2';
+import Swal from 'sweetalert2';
 
 export default function Sidebar({ 
   activeTab, 
@@ -25,7 +26,7 @@ export default function Sidebar({
     BN: {
       patient: 'রোগী', vitals: 'শারীরিক লক্ষণ', complaints: 'প্রধান সমস্যা',
       history: 'পূর্বের ইতিহাস', examination: 'শারীরিক পরীক্ষা', diagnosis: 'রোগ নির্ণয়',
-      investigations: 'পরীক্ষা-নিরীক্ষা', medicines: 'ওষুধ (Rx)', advice: 'পরামর্শ ও ফলোআপ',
+      investigations: 'পরীক্ষা-নির-ীক্ষা', medicines: 'ওষুধ (Rx)', advice: 'পরামর্শ ও ফলোআপ',
       interactions: 'ড্রাগ ইন্টারেকশন', save: 'সেভ করুন', print: 'প্রিন্ট', share: 'শেয়ার', template: 'টেমপ্লেট', pdf: 'পিডিএফ'
     }
   };
@@ -67,18 +68,22 @@ export default function Sidebar({
       cleanPhone = '88' + cleanPhone;
     }
 
+    const publicLink = prescriptionData?.prescriptionId ? `${window.location.origin}/prescription/${prescriptionData.prescriptionId}` : null;
+
     return {
       patientName: prescriptionData?.patient?.name || 'Patient',
       patientPhone: cleanPhone, 
       patientEmail: prescriptionData?.patient?.email || '', 
       doctorName: doctorProfile?.name || 'Doctor',
       clinicName: selectedChamber?.chamberName || 'Our Clinic',
+      publicLink: publicLink
     };
   };
 
   const openWhatsAppModal = () => {
-    const { patientName, patientPhone, doctorName, clinicName } = getShareDetails();
-    const text = `Hello ${patientName},\nThis is ${doctorName} from ${clinicName}.\n\nYour prescription is ready. Please follow the instructions carefully.\n\nThank you!`;
+    const { patientName, patientPhone, doctorName, clinicName, publicLink } = getShareDetails();
+    const linkAppendix = publicLink ? `\n\nView or download your digital prescription securely here:\n${publicLink}` : '';
+    const text = `Hello ${patientName},\nThis is ${doctorName} from ${clinicName}.\n\nYour prescription is ready. Please follow the instructions carefully.${linkAppendix}\n\nThank you!`;
     
     setShareModal({
       type: 'whatsapp',
@@ -88,14 +93,54 @@ export default function Sidebar({
   };
 
   const openEmailModal = () => {
-    const { patientName, patientEmail, doctorName } = getShareDetails();
-    const subject = `Follow-up from ${doctorName}`;
-    const body = `Dear ${patientName},\n\nI hope you are doing well.\n\nPlease follow your prescription and contact if needed.\n\nRegards,\n${doctorName}`;
+    const { patientName, patientEmail, doctorName, publicLink } = getShareDetails();
+    const subject = `Your Prescription from ${doctorName}`;
+    const linkAppendix = publicLink ? `\n\nYou can view, print, or download your prescription securely online using this link:\n${publicLink}` : '';
+    const body = `Dear ${patientName},\n\nI hope you are doing well.\n\nPlease find your digital prescription attached.${linkAppendix}\n\nRegards,\n${doctorName}`;
 
     setShareModal({
       type: 'email',
       data: { email: patientEmail, subject: subject, message: body }
     });
+    setIsShareMenuOpen(false);
+  };
+
+  const triggerNativeShare = async () => {
+    const { publicLink, patientName } = getShareDetails();
+    
+    if (!publicLink) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Not Saved',
+            text: 'Save the prescription first to generate a shareable public link!',
+            timer: 3000,
+            showConfirmButton: false
+        });
+        return;
+    }
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: `Prescription for ${patientName}`,
+                text: `View your digital prescription securely:`,
+                url: publicLink,
+            });
+        } catch (err) {
+            console.error('Error sharing:', err);
+        }
+    } else {
+        // Fallback for browsers without Web Share API
+        navigator.clipboard.writeText(publicLink).then(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Link Copied',
+                text: 'Public prescription link copied to clipboard!',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
+    }
     setIsShareMenuOpen(false);
   };
 
@@ -124,6 +169,37 @@ export default function Sidebar({
       ...prev,
       data: { ...prev.data, [field]: value }
     }));
+  };
+
+  // Check if clinical data is completely empty
+  const isPrescriptionEmpty = () => {
+    const d = prescriptionData;
+    if (!d) return true;
+    return (
+      (!d.complaints || d.complaints.length === 0) &&
+      (!d.history || d.history.length === 0) &&
+      (!d.examination || d.examination.length === 0) &&
+      (!d.diagnosis || d.diagnosis.length === 0) &&
+      (!d.investigations || d.investigations.length === 0) &&
+      (!d.medicines || d.medicines.length === 0) &&
+      (!d.advice || d.advice.length === 0) &&
+      (!d.vitals || (!d.vitals.bp && !d.vitals.weight && !d.vitals.pulse && !d.vitals.temp && !d.vitals.height && !d.vitals.spo2)) &&
+      !d.followUp
+    );
+  };
+
+  const handleAction = (action, actionName) => {
+    if (isPrescriptionEmpty()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Empty Prescription',
+        text: `Prescription is fully empty! Cannot ${actionName.toLowerCase()}. Please add some clinical details.`,
+        timer: 15000,
+        timerProgressBar: true
+      });
+      return;
+    }
+    if (typeof action === 'function') action();
   };
 
   return (
@@ -170,7 +246,7 @@ export default function Sidebar({
 
         <div className="p-4 border-t border-slate-100 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800 transition-colors duration-300">
           <button
-            onClick={onSave}
+            onClick={() => handleAction(onSave, t.save)}
             className="w-full bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all shadow-sm"
           >
             <ICONS.Save size={18} />
@@ -179,14 +255,14 @@ export default function Sidebar({
 
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={onPrint}
+              onClick={() => handleAction(onPrint, t.print)}
               className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
             >
               <ICONS.Print size={16} /> {t.print}
             </button>
 
             <button
-              onClick={onExportPdf}
+              onClick={() => handleAction(onExportPdf, t.pdf)}
               className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
             >
               <FileText size={16} /> {t.pdf}
@@ -194,7 +270,7 @@ export default function Sidebar({
 
             <div className="relative" ref={shareMenuRef}>
               <button 
-                onClick={() => setIsShareMenuOpen(!isShareMenuOpen)}
+                onClick={() => handleAction(() => setIsShareMenuOpen(!isShareMenuOpen), t.share)}
                 className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg text-slate-700 dark:text-gray-300 transition-colors"
               >
                 <ICONS.Share size={16} /> {t.share}
@@ -213,6 +289,13 @@ export default function Sidebar({
                     className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium text-slate-700 dark:text-gray-200 border-t border-slate-100 dark:border-gray-700"
                   >
                     <FaEnvelope className="text-blue-500 text-lg" /> Email Patient
+                  </button>
+                  <button 
+                    onClick={triggerNativeShare}
+                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700/20 text-sm font-bold text-slate-800 dark:text-gray-100 border-t border-slate-200 dark:border-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    More Apps (FB, X, SMS...)
                   </button>
                 </div>
               )}

@@ -27,7 +27,13 @@ import WebsiteProfile from "../pages/Admin/WebsiteProfile";
 import CreatePrescription from "../pages/Admin/CreatePrescription";
 import PrescriptionTemplate from "../pages/Admin/PrescriptionTemplate";
 import AdminBlog from "../pages/Admin/Blog";
+import SoftwareLanding from "../pages/SoftwareLanding";
 
+// Software Landing Legal Pages
+import SoftwareTerms from "../pages/SoftwareLegal/TermsOfService";
+import SoftwarePrivacyPolicy from "../pages/SoftwareLegal/PrivacyPolicy";
+import SoftwareCookiePolicy from "../pages/SoftwareLegal/CookiePolicy";
+import SoftwareRefundPolicy from "../pages/SoftwareLegal/RefundPolicy";
 
 import SAroot from "./Root/Superadmin/Sroot";
 import SuperAdminHome from "../pages/Superadmin/Home";
@@ -57,27 +63,63 @@ import RefundPolicy from "../pages/RefundPolicy";
 import SelectChamber from "../pages/SelectChamber";
 import TodaysAppointments from "../pages/TodaysAppointments";
 import BookingConfirmation from "../pages/BookingConfirmation";
+import SharedPrescriptionView from "../pages/SharedPrescriptionView";
 
 export const router = createBrowserRouter([
   {
     path: "/",
+    element: <SoftwareLanding />,
+    errorElement: <Error404 />,
+  },
+  {
+    path: "/terms-of-service",
+    element: <SoftwareTerms />,
+    errorElement: <Error404 />,
+  },
+  {
+    path: "/privacy-policy",
+    element: <SoftwarePrivacyPolicy />,
+    errorElement: <Error404 />,
+  },
+  {
+    path: "/cookie-policy",
+    element: <SoftwareCookiePolicy />,
+    errorElement: <Error404 />,
+  },
+  {
+    path: "/refund-policy",
+    element: <SoftwareRefundPolicy />,
+    errorElement: <Error404 />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/doctorwebsite",
     element: <Root />,
     errorElement: <Error404 />,
     children: [
-      { path: "/", element: <Home /> },
-      { path: "/about", element: <About /> },
-      { path: "/blog", element: <Blog /> },
-      { path: "/contact", element: <Contact /> },
-      { path: "/expertise", element: <Expertise /> },
-      { path: "/terms-of-use", element: <TermsOfUse /> },
-      { path: "/privacy-policy", element: <PrivacyPolicy /> },
-      { path: "/cookie-policy", element: <CookiePolicy /> },
-      { path: "/refund-policy", element: <RefundPolicy /> },
-      { path: "/booking-confirmation", element: <BookingConfirmation /> },
-      { path: "/select-chamber", element: <SelectChamber /> },
-      { path: "/todays-appointments", element: <TodaysAppointments /> },
-      { path: "/login", element: <Login />, },
+      { index: true, element: <Home /> },
+      { path: "about", element: <About /> },
+      { path: "blog", element: <Blog /> },
+      { path: "contact", element: <Contact /> },
+      { path: "expertise", element: <Expertise /> },
+      { path: "terms-of-use", element: <TermsOfUse /> },
+      { path: "privacy-policy", element: <PrivacyPolicy /> },
+      { path: "cookie-policy", element: <CookiePolicy /> },
+      { path: "refund-policy", element: <RefundPolicy /> },
+      { path: "booking-confirmation", element: <BookingConfirmation /> },
+      { path: "select-chamber", element: <SelectChamber /> },
+      { path: "todays-appointments", element: <TodaysAppointments /> },
     ],
+  },
+
+  // 1.5 Shared Public Views
+  {
+    path: "/prescription/:id",
+    element: <SharedPrescriptionView />,
+    errorElement: <Error404 />,
   },
 
   // 2. Admin Routes Wrapped in Aroot Layout

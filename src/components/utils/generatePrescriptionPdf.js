@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
-import domtoimage from 'dom-to-image';
+import domtoimage from 'dom-to-image-more';
 import dayjs from 'dayjs';
+import Swal from 'sweetalert2';
 
 export const generatePrescriptionPdf = async (elementId, patientName) => {
     const element = document.getElementById(elementId);
@@ -11,41 +12,46 @@ export const generatePrescriptionPdf = async (elementId, patientName) => {
     }
 
     try {
-        // Temporarily adjust styles for better capturing if necessary (e.g. background color)
-        const originalBg = element.style.backgroundColor;
-        element.style.backgroundColor = '#ffffff';
-
-        const scale = 2;
-        const width = element.offsetWidth;
-        const height = element.offsetHeight;
-
-        // Capture the element using dom-to-image with explicit sizes and scale
-        const dataUrl = await domtoimage.toPng(element, { 
+        // We MUST use dom-to-image-more because html2canvas fatally crashes on Tailwind oklch colors.
+        // We explicitly pass width and height to force the SVG layer to lock layout preventing flex compression!
+        const imgData = await domtoimage.toJpeg(element, {
             quality: 1.0,
             bgcolor: '#ffffff',
-            width: width * scale,
-            height: height * scale,
+            width: 794,
+            height: element.scrollHeight,
             style: {
-                transform: `scale(${scale})`,
+                transform: 'scale(1)',
                 transformOrigin: 'top left',
-                width: `${width}px`,
-                height: `${height}px`,
-                margin: '0'
+                width: '794px'
             }
         });
 
-        // Restore original background
-        element.style.backgroundColor = originalBg;
-
         // Initialize jsPDF (Portrait, millimeters, A4 size)
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        // Calculate height based on A4 ratio or element ratio
-        const imgProps = pdf.getImageProperties(dataUrl);
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+        const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
 
-        // Add the image to the PDF
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        const elementWidth = 794;
+        const elementHeight = element.scrollHeight;
+
+        // Calculate the total height of the image when scaled to A4 width
+        const totalImgHeightInMm = (elementHeight * pdfWidth) / elementWidth;
+
+        let heightLeft = totalImgHeightInMm;
+        let position = 0;
+
+        // Add the first page
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalImgHeightInMm);
+        heightLeft -= pdfHeight;
+
+        // ✅ FIX: Use `> 1` instead of `> 0` to absorb tiny decimal remainders
+        // and prevent the generation of a trailing blank page.
+        while (heightLeft > 1) {
+            position = heightLeft - totalImgHeightInMm;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalImgHeightInMm);
+            heightLeft -= pdfHeight;
+        }
 
         // Generate filename
         const safeName = patientName ? patientName.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'patient';
@@ -56,6 +62,12 @@ export const generatePrescriptionPdf = async (elementId, patientName) => {
 
     } catch (error) {
         console.error("Error generating PDF: ", error);
-        alert("Failed to generate PDF. " + (error.message || error));
+        Swal.fire({
+            icon: 'error',
+            title: 'PDF Generation Failed',
+            text: "Failed to generate PDF. " + (error.message || error),
+            timer: 15000,
+            timerProgressBar: true
+        });
     }
 };

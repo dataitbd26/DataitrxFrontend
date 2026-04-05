@@ -4,36 +4,35 @@ import PrescriptionPreview from './../../components/Prescription/PrescriptionPre
 import RightPanel from './../../components/Prescription/RightPanel';
 import { ICONS } from './../../components/Prescription/Icons';
 import { useLocation, useOutletContext } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
-// Hooks and context
 import usePrescription from '../../Hook/usePrescription';
 import useChamber from '../../Hook/useChamber';
 import useDoctorProfile from '../../Hook/useDoctorProfile';
 import { AuthContext } from '../../providers/AuthProvider';
 
-// Import the new PDF utility and Modal
 import { generatePrescriptionPdf } from '../../components/utils/generatePrescriptionPdf';
-import AppointmentViewModal from '../../components/modal/AppointmentViewModal'; // 👈 IMPORTED MODAL
-
+import AppointmentViewModal from '../../components/modal/AppointmentViewModal';
 import PastPrescriptionsModal from '../../components/modal/PastPrescriptionsModal';
 import PrescriptionViewModal from '../../components/modal/PrescriptionViewModal';
 
 export default function CreatePrescription() {
-  const location = useLocation(); 
-  const incomingAppointment = location.state?.appointmentData; 
+  const location = useLocation();
+  const incomingAppointment = location.state?.appointmentData;
+  const editPrescription = location.state?.editPrescription;
 
   const [activeTab, setActiveTab] = useState('patient');
   const [language, setLanguage] = useState('EN');
-  const [isExporting, setIsExporting] = useState(false); 
-  
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // 👈 MODAL STATE
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // Modals specific to Prescription Search
+  const [isExporting, setIsExporting] = useState(false);
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [viewingPrescription, setViewingPrescription] = useState(null);
 
-  const { toggleGlobalSidebar } = useOutletContext() || {}; // Connect to ARoot context
+  const { toggleGlobalSidebar } = useOutletContext() || {};
 
   const { branch, user } = useContext(AuthContext);
-  const { createPrescription, getPrescriptionsByBranch, loading: isSaving } = usePrescription();
+  const { createPrescription, updatePrescription, getPrescriptionsByBranch, loading: isSaving } = usePrescription();
   const { getChambersByBranch } = useChamber();
   const { getProfilesByBranch } = useDoctorProfile();
 
@@ -43,7 +42,7 @@ export default function CreatePrescription() {
   const [pastPrescriptionCount, setPastPrescriptionCount] = useState(null);
 
   const [prescriptionData, setPrescriptionData] = useState({
-    patient: { name: '', age: '', gender: '', phone: '', patientId: '' }, 
+    patient: { name: '', age: '', gender: '', phone: '', patientId: '' },
     vitals: { bp: '', weight: '', pulse: '', temp: '', height: '', spo2: '' },
     complaints: [],
     complaintsText: '',
@@ -54,13 +53,14 @@ export default function CreatePrescription() {
     diagnosis: [],
     diagnosisText: '',
     investigations: [],
+    investigationsDiscount: '',
     medicines: [],
     advice: [],
     adviceText: '',
-    followUp: ''
+    followUp: '',
+    patientType: 'New Patient'
   });
 
-  // 👇 DYNAMIC HISTORY COUNTER 👇
   useEffect(() => {
     const phone = prescriptionData.patient?.phone;
     const name = prescriptionData.patient?.name;
@@ -88,7 +88,6 @@ export default function CreatePrescription() {
     return () => clearTimeout(timer);
   }, [prescriptionData.patient?.phone, prescriptionData.patient?.name, branch, getPrescriptionsByBranch]);
 
-  // 👇 PRE-CHECKUP CONDITIONALS 👇
   const targetAppointmentId = incomingAppointment?._id;
   const hasPreCheckup = Boolean(incomingAppointment?.preCheckupId);
 
@@ -114,12 +113,41 @@ export default function CreatePrescription() {
           height: checkup?.examination?.vitals?.height || prev.vitals.height,
           spo2: prev.vitals.spo2
         },
-        complaints: checkup?.chiefComplaints 
-            ? checkup.chiefComplaints.map(c => c.complaint) 
-            : prev.complaints
+        patientType: incomingAppointment.patientType || prev.patientType,
+        complaints: checkup?.chiefComplaints
+          ? checkup.chiefComplaints.map(c => c.complaint)
+          : prev.complaints
       }));
+    } else if (editPrescription) {
+      setPrescriptionData({
+        _id: editPrescription._id,
+        prescriptionId: editPrescription.prescriptionId,
+        patient: {
+          name: editPrescription.patient?.name || '',
+          age: editPrescription.patient?.age || '',
+          gender: editPrescription.patient?.gender || '',
+          phone: editPrescription.patient?.phone || '',
+          patientId: editPrescription.patientId || ''
+        },
+        vitals: editPrescription.vitals || { bp: '', weight: '', pulse: '', temp: '', height: '', spo2: '' },
+        complaints: editPrescription.complaints || [],
+        complaintsText: editPrescription.complaintsText || '',
+        history: editPrescription.history || [],
+        historyText: editPrescription.historyText || '',
+        examination: editPrescription.examination || [],
+        examinationText: editPrescription.examinationText || '',
+        diagnosis: editPrescription.diagnosis || [],
+        diagnosisText: editPrescription.diagnosisText || '',
+        investigations: editPrescription.investigations || [],
+        investigationsDiscount: editPrescription.investigationsDiscount || '',
+        medicines: editPrescription.medicines || [],
+        advice: editPrescription.advice || [],
+        adviceText: editPrescription.adviceText || '',
+        followUp: editPrescription.followUp || '',
+        patientType: editPrescription.patientType || 'Old Patient'
+      });
     }
-  }, [incomingAppointment]);
+  }, [incomingAppointment, editPrescription]);
 
   useEffect(() => {
     const fetchHeaderData = async () => {
@@ -136,7 +164,12 @@ export default function CreatePrescription() {
 
         if (chamberRes?.data && chamberRes.data.length > 0) {
           setChambers(chamberRes.data);
-          setSelectedChamber(chamberRes.data[0]);
+          if (editPrescription?.chamberId) {
+             const matched = chamberRes.data.find(c => c._id === editPrescription.chamberId);
+             setSelectedChamber(matched || chamberRes.data[0]);
+          } else {
+             setSelectedChamber(chamberRes.data[0]);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch data for prescription header:", err);
@@ -153,18 +186,30 @@ export default function CreatePrescription() {
     }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (showSuccessAlert = true) => {
     const { patientId } = prescriptionData.patient;
     if (!prescriptionData.patient.name) {
-      alert("Patient name is required!");
-      return;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Info',
+        text: 'Patient name is required!',
+        timer: 15000,
+        timerProgressBar: true
+      });
+      return false;
     }
 
     const finalDoctorId = doctorProfile?._id || user?._id || user?.id;
 
     if (!branch || !finalDoctorId) {
-      alert("Doctor or Branch information is missing. Please log in again.");
-      return;
+      Swal.fire({
+        icon: 'error',
+        title: 'Authentication Error',
+        text: 'Doctor or Branch information is missing. Please log in again.',
+        timer: 15000,
+        timerProgressBar: true
+      });
+      return false;
     }
 
     try {
@@ -174,37 +219,82 @@ export default function CreatePrescription() {
         patientId: patientId,
         doctorId: finalDoctorId,
         chamberId: selectedChamber?._id || null,
+        appointmentId: targetAppointmentId || null,
         status: 'Completed'
       };
 
-      await createPrescription(payload);
-      alert("Prescription saved successfully!");
+      let savedDoc;
+      if (prescriptionData._id) {
+        savedDoc = await updatePrescription(prescriptionData._id, payload);
+      } else {
+        savedDoc = await createPrescription(payload);
+      }
+
+      if (savedDoc && savedDoc._id) {
+        setPrescriptionData(prev => ({
+          ...prev,
+          _id: savedDoc._id,
+          prescriptionId: savedDoc.prescriptionId || prev.prescriptionId
+        }));
+      }
+
+      if (showSuccessAlert) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Prescription saved successfully! Barcode is now active.',
+          timer: 15000,
+          timerProgressBar: true
+        });
+      }
+      return true;
     } catch (error) {
       console.error("Error saving prescription:", error);
-      alert(error || "Failed to save prescription.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Save Failed',
+        text: error || 'Failed to save prescription.',
+        timer: 15000,
+        timerProgressBar: true
+      });
+      return false;
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const saved = await handleSave(false);
+    if (!saved) return;
+
+    // Delay slightly to absolutely ensure React has finished painting the Barcode from state update
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   const handleExportPdf = async () => {
     setIsExporting(true);
-    await generatePrescriptionPdf('prescription-preview', prescriptionData.patient.name);
-    setIsExporting(false);
+    const saved = await handleSave(false);
+
+    if (!saved) {
+      setIsExporting(false);
+      return;
+    }
+
+    // Rely on the jsPDF direct generator tool for silent automatic download
+    setTimeout(async () => {
+      await generatePrescriptionPdf('prescription-preview', prescriptionData.patient.name);
+      setIsExporting(false);
+    }, 500);
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex flex-col h-screen bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden font-sans transition-colors duration-300 print:h-auto print:overflow-visible print:shadow-none print:border-none">
 
       <header className="h-14 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0 z-20 transition-colors duration-300 print:hidden">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => {
-              if (toggleGlobalSidebar) {
-                toggleGlobalSidebar();
-              }
+              if (toggleGlobalSidebar) toggleGlobalSidebar();
             }}
             className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full transition-colors text-slate-600 dark:text-gray-300">
             <ICONS.Menu size={20} />
@@ -213,8 +303,6 @@ export default function CreatePrescription() {
         </div>
 
         <div className="flex items-center gap-3">
-          
-          {/* Dynamic History Button based on valid patient phone string matching backend schema requirement */}
           {pastPrescriptionCount !== null && pastPrescriptionCount > 0 && (
             <button
               onClick={() => setIsHistoryModalOpen(true)}
@@ -225,7 +313,6 @@ export default function CreatePrescription() {
             </button>
           )}
 
-          {/* ✨ CONDITIONALLY RENDERED BUTTON ✨ */}
           {hasPreCheckup && (
             <button
               type="button"
@@ -233,8 +320,8 @@ export default function CreatePrescription() {
               className="mr-2 px-4 py-1.5 bg-blue-green hover:bg-blue-green/90 text-concrete font-bold text-sm rounded-lg shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                <circle cx="12" cy="12" r="3"/>
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
               View Pre-Checkup
             </button>
@@ -280,8 +367,7 @@ export default function CreatePrescription() {
         </div>
       </header>
 
-      {/* Main Layout */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden relative">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden relative print:h-auto print:overflow-visible">
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -310,44 +396,72 @@ export default function CreatePrescription() {
           </div>
         )}
 
+        {/* ✅ FIX: We are now passing `isExporting` to the preview component */}
         <PrescriptionPreview
           data={prescriptionData}
           language={language}
           doctor={doctorProfile}
           chamber={selectedChamber}
+          isExporting={isExporting}
         />
 
         <RightPanel activeTab={activeTab} data={prescriptionData} updateData={updateData} language={language} />
       </div>
 
-      {/* ✨ RENDER MODAL HERE ✨ */}
       <AppointmentViewModal
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         appointmentId={targetAppointmentId}
       />
-      
-      {/* Historical Prescriptions Engine Sub-Flow */}
-      <PastPrescriptionsModal 
-          isOpen={isHistoryModalOpen} 
-          onClose={() => setIsHistoryModalOpen(false)} 
-          patientPhone={prescriptionData.patient?.phone || prescriptionData.patient?.name} 
-          patientName={prescriptionData.patient?.name}
-          onSelectPrescription={(p) => {
-              setViewingPrescription(p);
-              setIsHistoryModalOpen(false); // Close the history list so they can view the selected document natively 
-          }} 
+
+      <PastPrescriptionsModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        patientPhone={prescriptionData.patient?.phone || prescriptionData.patient?.name}
+        patientName={prescriptionData.patient?.name}
+        onSelectPrescription={(p) => {
+          setViewingPrescription(p);
+          setIsHistoryModalOpen(false);
+        }}
       />
 
-      <PrescriptionViewModal 
-          isOpen={!!viewingPrescription} 
-          onClose={() => {
-              setViewingPrescription(null);
-              setIsHistoryModalOpen(true); // Return back to the parent list index 
-          }} 
-          prescriptionData={viewingPrescription} 
-          doctorProfile={doctorProfile} 
-          chamber={selectedChamber} 
+      <PrescriptionViewModal
+        isOpen={!!viewingPrescription}
+        onClose={() => {
+          setViewingPrescription(null);
+          setIsHistoryModalOpen(true);
+        }}
+        prescriptionData={viewingPrescription}
+        doctorProfile={doctorProfile}
+        chamber={selectedChamber}
+        onClone={(oldData) => {
+          setPrescriptionData(prev => ({
+              ...prev,
+              vitals: oldData.vitals || prev.vitals,
+              complaints: oldData.complaints || [],
+              complaintsText: oldData.complaintsText || '',
+              history: oldData.history || [],
+              historyText: oldData.historyText || '',
+              examination: oldData.examination || [],
+              examinationText: oldData.examinationText || '',
+              diagnosis: oldData.diagnosis || [],
+              diagnosisText: oldData.diagnosisText || '',
+              investigations: oldData.investigations || [],
+              investigationsDiscount: oldData.investigationsDiscount || '',
+              medicines: oldData.medicines || [],
+              advice: oldData.advice || [],
+              adviceText: oldData.adviceText || '',
+              followUp: oldData.followUp || ''
+          }));
+          setViewingPrescription(null);
+          Swal.fire({
+            icon: 'success',
+            title: 'Cloned!',
+            text: 'Data imported perfectly. Tweak it and save as a new receipt.',
+            timer: 3000,
+            timerProgressBar: true
+          });
+        }}
       />
 
     </div>

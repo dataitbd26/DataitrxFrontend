@@ -14,9 +14,10 @@ export default function MedicinesPanel({ data, updateData, t }) {
   const [dynamicMeds, setDynamicMeds] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // States for custom duration
   const [customDurValue, setCustomDurValue] = useState('');
   const [customDurUnit, setCustomDurUnit] = useState('days');
+  const [customDoseValue, setCustomDoseValue] = useState('');
+  const [customTypeValue, setCustomTypeValue] = useState('');
 
   const [medInput, setMedInput] = useState({
     type: 'Tab',
@@ -118,6 +119,8 @@ export default function MedicinesPanel({ data, updateData, t }) {
     setSearchTerm('');
     setMedInput({ type: 'Tab', dosage: '1+1+1', duration: 'Continue', instruction: 'After meal' });
     setCustomDurValue('');
+    setCustomDoseValue('');
+    setCustomTypeValue('');
     setIsDropdownOpen(false);
   };
 
@@ -127,6 +130,20 @@ export default function MedicinesPanel({ data, updateData, t }) {
     setCustomDurUnit(unit);
     if (val) {
       setMedInput({ ...medInput, duration: `${val} ${unit}` });
+    }
+  };
+
+  const handleCustomDose = (val) => {
+    setCustomDoseValue(val);
+    if (val) {
+      setMedInput({ ...medInput, dosage: val });
+    }
+  };
+
+  const handleCustomType = (val) => {
+    setCustomTypeValue(val);
+    if (val) {
+      setMedInput({ ...medInput, type: val });
     }
   };
 
@@ -194,12 +211,15 @@ export default function MedicinesPanel({ data, updateData, t }) {
         <div className="grid grid-cols-3 gap-4">
           <div className="flex flex-col gap-2">
             <span className="text-xs text-slate-500 dark:text-gray-400 mb-1">Type</span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {MED_TYPES.map(type => (
                 <button
                   key={type}
-                  onClick={() => setMedInput({ ...medInput, type })}
-                  className={`px-3 py-1.5 text-xs rounded border transition-colors ${medInput.type === type
+                  onClick={() => {
+                    setMedInput({ ...medInput, type });
+                    setCustomTypeValue('');
+                  }}
+                  className={`px-3 py-1.5 text-xs rounded border transition-colors ${medInput.type === type && !customTypeValue
                       ? 'bg-cyan-600 border-cyan-600 text-white font-medium'
                       : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
                     }`}
@@ -208,16 +228,33 @@ export default function MedicinesPanel({ data, updateData, t }) {
                 </button>
               ))}
             </div>
+            {/* Custom Type Mechanism */}
+            <div className="flex flex-col gap-1 pt-2 border-t border-slate-200 dark:border-gray-700">
+              <input
+                type="text"
+                placeholder="Custom (e.g. Sachet)"
+                value={customTypeValue}
+                onChange={(e) => handleCustomType(e.target.value)}
+                className={`w-full p-1.5 text-xs border rounded outline-none focus:ring-1 transition-colors ${
+                  customTypeValue 
+                  ? 'bg-cyan-600 border-cyan-600 text-white focus:ring-cyan-500 placeholder-teal-100' 
+                  : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 focus:ring-cyan-500 text-slate-800 dark:text-white'
+                }`}
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
             <span className="text-xs text-slate-500 dark:text-gray-400 mb-1">Dose</span>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 mb-2">
               {DOSAGES.map(dose => (
                 <button
                   key={dose}
-                  onClick={() => setMedInput({ ...medInput, dosage: dose })}
-                  className={`px-3 py-1.5 text-xs rounded border text-center transition-colors ${medInput.dosage === dose
+                  onClick={() => {
+                    setMedInput({ ...medInput, dosage: dose });
+                    setCustomDoseValue('');
+                  }}
+                  className={`px-3 py-1.5 text-xs rounded border text-center transition-colors ${medInput.dosage === dose && !customDoseValue
                       ? 'bg-cyan-600 border-cyan-600 text-white font-medium'
                       : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-cyan-400'
                     }`}
@@ -225,6 +262,20 @@ export default function MedicinesPanel({ data, updateData, t }) {
                   {dose}
                 </button>
               ))}
+            </div>
+            {/* Custom Dose Mechanism */}
+            <div className="flex flex-col gap-1 pt-2 border-t border-slate-200 dark:border-gray-700">
+              <input
+                type="text"
+                placeholder="Custom (2+0+1+0)"
+                value={customDoseValue}
+                onChange={(e) => handleCustomDose(e.target.value)}
+                className={`w-full p-1.5 text-xs border rounded text-center outline-none focus:ring-1 transition-colors ${
+                  customDoseValue 
+                  ? 'bg-cyan-600 border-cyan-600 text-white focus:ring-cyan-500 placeholder-teal-100' 
+                  : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-600 focus:ring-cyan-500 text-slate-800 dark:text-white'
+                }`}
+              />
             </div>
           </div>
 

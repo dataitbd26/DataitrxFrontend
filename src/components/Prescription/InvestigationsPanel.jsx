@@ -155,6 +155,20 @@ export default function InvestigationsPanel({ data, updateData, t, handleToggle 
         />
       </div>
 
+      {/* --- NEW: Discount Request --- */}
+      <div className="mb-6">
+        <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+          {t.discountRequest || "Discount Request"}
+        </label>
+        <input 
+          type="text"
+          value={data.investigationsDiscount || ''}
+          onChange={(e) => updateData('investigationsDiscount', e.target.value)}
+          className="w-full p-2.5 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-cyan-500 outline-none transition-colors"
+          placeholder={t.discountPlaceholder || "e.g. 20%, 500 BDT, Free..."}
+        />
+      </div>
+
       {/* --- NEW: Added Investigations List (Similar to Medicines Page) --- */}
       <div className="mt-auto pt-4 border-t border-slate-200 dark:border-gray-700">
         <div className="flex justify-between items-center mb-3">

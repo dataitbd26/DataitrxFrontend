@@ -96,6 +96,21 @@ const useAppointment = () => {
         }
     };
 
+    const getPaymentStats = useCallback(async (branch, params) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const { data } = await axiosSecure.get(`/appointments/${branch}/payment-stats`, { params });
+            return data;
+        } catch (err) {
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, [axiosSecure]);
+
     return {
         loading,
         error,
@@ -105,6 +120,7 @@ const useAppointment = () => {
         createAppointment,
         updateAppointment,
         removeAppointment,
+        getPaymentStats,
     };
 };
 

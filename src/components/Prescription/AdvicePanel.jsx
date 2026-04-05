@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CHIPS_DATA } from '../../data/chips'; // Adjust path
+import { HiXMark } from "react-icons/hi2";
 
 export default function AdvicePanel({ data, updateData, t, handleToggle }) {
   // Track which input is active to show quick picks
@@ -35,8 +36,52 @@ export default function AdvicePanel({ data, updateData, t, handleToggle }) {
   return (
     <div className="p-4 flex flex-col h-full overflow-y-auto custom-scrollbar">
       
+      {/* Patient Type Section */}
+      <div className="mb-6 advice-group">
+        <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-3">
+          Patient Type
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {['New Patient', 'Old Patient', 'Report'].map((type) => (
+            <button
+               key={type}
+               type="button"
+               onClick={() => updateData('patientType', type)}
+               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                 data.patientType === type
+                    ? 'bg-cyan-600 text-white border-cyan-600 shadow-md'
+                    : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-gray-300 border-slate-200 dark:border-gray-600 hover:border-cyan-400 hover:text-cyan-600'
+               }`}
+            >
+               {type}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Advice Section */}
       <div className="mb-6 advice-group">
+        <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-3">
+          {t.advice || 'Advice'}
+        </label>
+        
+        {/* Added Advice List */}
+        {data.advice && data.advice.length > 0 && (
+          <div className="flex flex-col gap-2 mb-4">
+            {data.advice.map((item, index) => (
+              <div key={index} className="flex justify-between items-center bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 px-3 py-2 rounded-lg text-sm">
+                <span className="text-slate-700 dark:text-gray-200">{item}</span>
+                <button 
+                  type="button"
+                  onClick={() => handleToggle('advice', item)}
+                  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
+                 >
+                   <HiXMark className="w-4 h-4" />
+                 </button>
+              </div>
+            ))}
+          </div>
+        )}
         
         {/* Custom Text Add Mechanism (Replaces Textarea) */}
         <div className="flex items-center gap-2">
